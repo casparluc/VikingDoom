@@ -1,0 +1,283 @@
+@font-face {
+	font-family:celticMd;
+	src: url("../fonts/celticmd.ttf");
+}
+
+html, body {
+	margin: 0px;
+	padding: 0px;
+	background-color: #402717;
+	color: #d6d6d6;
+	font-family:celticMd, Verdana, Serif;
+}
+
+div#content {
+	position: relative;
+	width: 1080px;
+	margin:auto;
+	padding:0px;
+	background-color: #795b3c;
+}
+
+header {
+	padding: 30px 0px;
+}
+
+header div#banner {
+	text-align:center;
+	font-size: 5em;
+}
+
+header nav {
+	text-align: center;
+}
+
+header nav a {
+	position: relative;
+	padding: 0.8em;
+	margin: 20px;
+	font-weight: normal;
+	font-size: 1.5em;
+	color: #d6d6d6;
+	text-decoration:none;
+	background-image: url("../images/site/name_tag_hori.png");
+	background-repeat: no-repeat;
+	background-size: 100% 100%;
+}
+
+main {
+	padding: 50px;
+}
+
+section a, section a:hover, section a:visited {
+	color: #db8a8a;
+	text-decoration: none;
+}
+
+section p {
+	line-height: 200%;
+	text-indent: 50px;
+}
+
+section ul li {
+	line-height: 150%;
+	margin: 10px 0px;
+}
+
+section h1 {
+	margin-top: 75px;
+	font-weight:normal;
+	font-size: 3.5em;
+}
+
+section h2 {
+	margin-top: 50px;
+	font-weight:normal;
+	font-size: 2.5em;
+}
+
+section h3 {
+	margin-top: 25px;
+	font-weight: normal;
+	font-size: 1.5em;
+	text-decoration: underline;
+}
+
+main section#rules div.imgs_right {
+	float: right;
+	padding-left: 10px;
+}
+
+main section#rules div.imgs_left img {
+	padding-right: 50px;
+}
+
+/*
+*
+*  Arena related css
+*
+*/
+
+main section div#arena {
+	position: relative;
+	top: 0px;
+	left: -478px;
+	width: 1937px;
+	height: 1907px;
+	margin: 0px;
+	margin-top: 75px;
+	padding: 0px;
+	background-image: url("../images/site/border.png");
+	background-repeat: no-repeat;
+	background-position: 0 0;
+}
+
+main section div#arena canvas {
+	position: relative;
+	top: 314px;
+	left: 428px;
+}
+
+/* Do not display the loading message */
+div#p5_loading {
+	display: none;
+}
+
+main section div#stats ul {
+	position: relative;
+	top: 1585px;
+	left: 525px;
+	float: left;
+	width: 245px;
+	margin: 0px;
+	padding: 0px;
+}
+
+main section div#stats ul#red {
+	height: 166px;
+	background-image: url("../images/sprites/red/stats.png");
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+}
+main section div#stats ul#green {
+	height: 166px;
+	background-image: url("../images/sprites/green/stats.png");
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+}
+main section div#stats ul#blue {
+	height: 166px;
+	background-image: url("../images/sprites/blue/stats.png");
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+}
+main section div#stats ul#brown {
+	height: 166px;
+	background-image: url("../images/sprites/brown/stats.png");
+	background-repeat: no-repeat;
+	background-position: 0px 0px;
+}
+
+main section div#stats ul li {
+	margin: 0px;
+	padding: 0px 0px 0px 60px;
+	line-height: 1.6em;
+	font-size: 1.3em;
+}
+
+main section#ranks {
+	margin-top: 150px;
+}
+
+main section#ranks ol {
+	margin-left: 100px;
+}
+
+main section#ranks ol li{
+	padding-left: 20px;
+	text-align: left;
+	font-size: 1.5em;
+	line-height: 2em;
+}
+
+
+/*
+*
+*  Design of the New Player page
+*
+*/
+
+main section div#new_player_form {
+	position:relative;
+	width:75%;
+	margin:auto;
+	text-align: right;
+}
+
+main section div#new_player_form p {
+	margin-bottom: 50px;
+	text-align: left;
+	text-indent: 0px;
+}
+
+main section div#new_player_form form input {
+	position:relative;
+	width: 350px;
+	padding: 5px 10px;
+	margin: 5px 0px;
+}
+
+main section div#new_player_form form input#send_button {
+	margin-top: 30px;
+	padding: 20px;
+	color: #d6d6d6;
+	font-family: celticmd;
+	font-size: 1em;
+	background-image: url("../images/site/name_tag_hori.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: 100% 100%;
+	background-color: transparent;
+	border: none;
+	cursor: pointer;
+}
+
+main section div#new_player_form form label {
+	line-height: 2em;
+	float: left;
+}
+
+main section div#error_message {
+	text-align: center;
+	color: #700;
+}
+
+main section div#message {
+	text-align: center;
+	
+}
+
+main section div#message div#code {
+	padding: 55px;
+	font-family: Verdana, Serif;
+	font-weight: bold;
+	font-size: 2em;
+	background-image: url("../images/site/name_tag_hori.png");
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+
+/*
+*
+*  Design of the Docs page
+*
+*/
+
+main section#create_bot img {
+	position:relative;
+	width: 100%;
+	margin: auto;
+}
+
+code, var {
+	font-family: monospace, serif;
+	font-style: normal;
+	font-size: 1.3em;
+	font-weight: bold;
+}
+
+pre {
+	position:relative;
+	width: 95%;
+	margin:auto;
+	padding: 20px;
+	font-family: monospace, serif;
+	font-style: normal;
+	font-size: 1.3em;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	background-color: #ffffff;
+	border-radius: 30px;
+	color: black;
+	box-shadow: 5px 5px 5px #402717 inset;
+}

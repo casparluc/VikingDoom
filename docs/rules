@@ -1,0 +1,68 @@
+The competition:
+   No limit is placed on the number of games a player takes part in. A player's overall place on the leader board is determined by the average gold gathered throughout the games played. The result will be rounded down to avoid floating point ranks.
+   There is no order for adding players to a game. Whenever a player sends a request, he will be added to the next game regardless of his rank or the number of games already played.
+   In this brawl, strategy within a game and playing as many of them as possible, will lead you to the top.
+
+The Game:
+   A game is characterized by a set of four players, each controlling their  hero, a map, a start and an end.
+   At the start of the game, the  number of played turn is set to 0, the map is populated with wall, markets, mines, enemies and items and the heros will spawn at their initial position.
+   From this point on, players can send their action to move their hero around and complete the quest (i.e.: slain the dragon, get the treasure, go back home, drink, eat and ... well you know ... feast until the Ragnarök).
+   The game ends when the maximum number of 1000 turns is reached or all players are terminated. The player having amassed the most gold is declared the winner.
+
+   + Turn:
+      At the beginning of each turn the Dungeon Master will wait 1 second for each player to send an action, before updating the properties of both the heroes, enemies and items. If no action is received within 1 second or the requested action is invalid, the Dungeon Master will increase the trial meter corresponding to the player. Once the trial meter has reached 3 (the maximum number of trials granted), the player will be Terminated.
+      The number of trial for each player is reset to 0 upon performing a valid move in a turn.
+      A terminated player has by no means lost the game. He cannot move around anymore, but the gold gathered so far still remains and the same goes for his ownership over the mines. Thus, a very efficient player even if terminated before the game's end might still end up the winner.
+
+   + Order of action: The action requests sent by the players are considered in sequence for each turn, from player 1 all the way to player 4, always in the same order. However, a hero can do more than simply move around (else it would not be much of a quest).
+      The order of actions is as follow:
+         + Items around the hero are collected automatically, but do not count as an action.
+         + If the hero is near a market a purchase will be made, ending the turn.
+         + If no purchase is made and the hero is near a mine that he does not own, the hero will fight against the Orc guardian, thus ending the turn.
+         + If no actions have been performed so far and an enemy (skeleton or dragon) is nearby, the hero will battle with the enemy and end the turn.
+         + The same is true if another hero is found in the vicinity of the player (viking clans do not really like each others). Some bludgeoning happens and the turn ends.
+         + Finally, in case none of the above applies, the player's request will be considered and the hero moved accordingly.
+
+The environment:
+   The map our heroes will be traveling, also referred to as the board of the game, is a square of 18 tiles in width and 18 tiles in height. Each tile can contain one of the following object at one time: an enemy, a hero, a mine, an item, a market and a wall, or be left empty.
+   Enemies and heroes cannot walk on tiles occupied by another object. A request sent by the player to move his hero on a non-empty tile will be considered as a forbidden move.
+
+Hero:
+   
+   + Health: At the beginning of each game and upon respawning (see Death below), your hero is granted a level of health of 100 units. This level will surely decrease during your journey to the dragon lair. Fortunately, potions can be found scattered around the map or can even be bought at your local market, that will somewhat restore part of your life force.
+   + Strength and upgrade: At the beginning of the game your is weak and inexperienced (told you he was an expendable pawn) and has basic strength  level of 1. Buying upgrades from merchants at the caravan will increase your strength by 5 units for the low price of 10 golds. A cheaper way to grow stronger is to fight (obviously) or rather to kill enemies. For each enemy killed you will gain 1 level of strength. To avoid your hero turning berserker and power drunk, his strength cannot increase over the level 25.
+   + Battle: While standing near a mine, an enemy or another hero, your hero will automatically fight. The damage dealt to others is equal to your hero's strength. So the stronger your hero is, the less turn you waste bashing other people skull in. Oh and one more thing, you absolutely cannot run away from a fight. No self respecting viking warrior would ever do that. The sheer idea of it make even the gods tremble.
+   + Death: If an enemy or another hero manages to defeat you in battle (decrease your health to 0), your hero will respawn in his initial position. You keep all the gold you gathered so far, but lose ownership over all your mines and live in the shame of having been beaten literally to death and not being called upon by the Valkyries (damn you Odin !!!).
+
+Enemies:
+   Enemies, especially skeletons, are the main reason you began your quest, but with time you will discover that their are more a nuisance than anything else, even though they might sometimes even help you protect your hard won gold.
+   + Skeleton: 
+      Skeletons are the most basic enemy units. Their strength are of the lowest level (level 1, like your hero at the beginning ... Damn that's low) and have been granted 50 units of life. Their souls having left their bodies, they wander the earth randomly walking around until someone put them out of their misery or until the Ragnarök (your pick).
+      When a skeleton's health level reaches 0 it will die again and disappear from the map. But fear not for you shall not be left without skulls to crush on your way to the dragon. After dying, a skeleton will be replaced by another one which will spawn/appear at a random location on the map
+
+   + Orc: 
+      Orcs are creatures born from the ground and that is were you found them, guarding the mines. They have a strength of level 5 and 50 units of health. On the contrary to skeletons, orcs cannot move around and are tied to a mine. Your hero will automatically fight any orc guarding a mine that does not belong to him. If your hero manages to kill the orc, the mine is yours and gold extracted from it will be yours as well. The defeated orc will be brought back to life and resume his role as guardian of your recently acquired mine.
+
+   + The dragon: 
+      Ah! Now we are talking. Dragons are worthy enemies for the mighty vikings. But they are not so easy to defeat. With a strength level of 25 and 10000 units of life, it will take you some time to kill that beast. Should your hero successfully slain the dragon, he will be rewarded with 500 golds, the songs of hundreds of poets and ever lasting glory.
+      If the dragon is your main target, you will have to be quick for there is only one dragon per map/game and it is not coming back to life anytime soon.
+
+Items:
+   Since heroes cannot step onto tiles containing items, item will be collected by walking on one of the four surrounding tiles (diagonal tiles are out of reach).
+   In a sense items are attracted to the hero.
+   
+Markets:
+   Markets are ideal places to refill your health and grow stronger in no time at all, if you have enough gold in your purse that is.
+   + potion: 
+      Potion store are randomly placed at the beginning of the game and stay in the same location at all time. For the low price of 10 golds, your hero will automatically get 10 units of life back.
+      Do not worry yourself about decreasing stocks, potion stores have an endless supply and will never disappear.
+      On each map you will find between 2 and 4 potion stores.
+   + upgrade:
+      The upgrade caravan is where you will want to go if you are a lazy hero and do not wish to go through the whole kill enemy - gain strength process and skip right to the last step (that would be gain strength). For 10 golds your hero will get stronger by 5 levels.
+      Beware though for upgrade caravans will move randomly each turn.
+      On each map only 1 or 2 upgrade caravans will be traveling, selling their wares.
+
+Mines:
+   Between 5 and 10 mines are placed randomly on the map at the beginning of the game. They do not have any owner apart from the orc guarding it.
+   By killing the orc, your hero becomes the owner of the mine. At the beginning of each turn, the riches extracted from the mine your hero owns will be added to his gold. The rate at which gold is mined amounts to 5 units per mine per turn.
+   If another hero manages to defeat the guardian of one of your mines, the corresponding mine will switch owner and you will not receive anymore gold from this mine.
