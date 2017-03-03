@@ -39,11 +39,15 @@ Here are some modules that are not essential for the main Viking Doom applicatio
 
 # Installation
 
-All great installation begin with a little bit of cloning. In this case you will have to clone the VikingDoom's project on your computer. Make sure that your user has read / write permissions to the directory in which VikingDoom will reside, then simply execute `$> git clone https://github.com/casparluc/VikingDoom.git`.
+All great installation begin with a little bit of cloning. In this case you will have to clone the VikingDoom's project on your computer. Make sure that your user has read / write permissions to the directory in which VikingDoom will reside, then simply execute: 
+```
+$> git clone https://github.com/casparluc/VikingDoom.git
+```
 
 Installing all of the required and even the optional modules is quite easy, since they are all available through the python package manager. On Linux all you need to do is:
    1. Open a new terminal window.
    2. And type in the following commands (depending on your system, you might have to be root to execute those commands):
+   
    ```
    $> pip3 install Django
    $> pip3 install coreapi
