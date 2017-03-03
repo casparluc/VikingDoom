@@ -1,6 +1,7 @@
 {% load static %}
 <html lang="en">
     <head>
+        <script src="{% static 'game/scripts/jquery.js' %}"></script>
         <link rel="stylesheet" type="text/css" href="{% static 'game/style/main.css' %}" />
         <meta charset="UTF-8">
         <title>Viking Doom | New Player</title>
@@ -11,9 +12,10 @@
                 <div id="banner"><p>VIKING DOOM</p></div>
                 <nav>
                     <a href="{% url 'home' %}">Home</a>
-                    <a href="{% url 'rules' %}">Story & Rules</a>
+                    <a href="{% url 'rules' %}">Rules</a>
                     <a href="{% url 'docs' %}">Docs</a>
                     <a href="{% url 'new_player' %}">Create Player</a>
+                    <a href="{% url 'about' %}">About</a>
                 </nav>
             </header>
             <main>
@@ -31,7 +33,30 @@
                                 <label for="fname_in">First name: </label><input id="fname_in" name="fname" maxlength="50" type="text" required placeholder="This will not be displayed on the site."/><br/>
                                 <label for="lname_in">Last name: </label><input id="lname_in" name="lname" maxlength="50" type="text" required placeholder="This will not be displayed on the site."/><br/>
                                 <label for="email_in">E-mail: </label><input id="email_in" name="email" maxlength="255" type="email" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}" required placeholder="A valid one would be great."/><br/>
-                                <input id="send_button" type="submit" value="To Valhalla !"/>
+                                <p id="tac_label">I agree to the terms and conditions related to the use of the Viking Doom project.</p>
+                                <div id="consent_form" style="clear:both;">
+                                   <ol type="1" start="1">
+                                      <li>
+                                         <label for="tac_1">I confirm that I have read and understand the <a href="/static/game/viking_doom_information_sheet.pdf" target="_blank">information explaining the Viking Doom project</a> and that I have had the opportunity to <a href="https://github.com/casparluc/VikingDoom/issues">ask questions about the project</a> (see also <a href="{% url 'about' %}#contacts">Contacts</a>).</label><input id="tac_1" type="checkbox" required/>
+                                      </li> 
+                                      <li>
+                                          <label for="tac_2">I understand that my participation is voluntary and that I am free to withdraw at any time without giving any reason and without there being any consequences.</label><input id="tac_2" type="checkbox" required/>
+                                      </li>
+                                      <li>
+                                         <label for="tac_3">I understand that my data will be kept strictly confidential. I give permission for members of the research team to have access to my anonymised data. I understand that my name will not be linked with the research materials, and I will not be identified or identifiable in the reports that result from the research.</label><input id="tac_3" type="checkbox" required/>
+                                      </li>
+                                      <li>
+                                         <label for="tac_4">I agree for the data collected from me to be used in future research.</label><input id="tac_4" type="checkbox" required/>
+                                      </li>
+                                      <li>
+                                         <label for="tac_5">I agree to take part in the Viking Doom research project.</label><input id="tac_5" type="checkbox" required/>
+                                      </li>
+				      <li>
+					 <label for="tac_6">I am over the age of Majority in my country and/or jurisdiction.</label><input id="tac_6" type="checkbox" required/>
+				      </li>
+                                   </ol>
+                                </div>
+                                <input id="send_button" type="submit" value="Agree & Submit"/>
                             </form>
                         </div>
                     {% endif %}

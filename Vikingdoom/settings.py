@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+# Required for application using django outside the server
+from django.conf.global_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,8 +27,13 @@ SECRET_KEY = 'your_secret_key_here'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['.vikingdoom.com']
+ALLOWED_HOSTS = []
 
+# Secure settings for use in production
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Application definition
 
@@ -77,13 +84,14 @@ WSGI_APPLICATION = 'Vikingdoom.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'your_db_name',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'USER': 'your_db_user',
-        'PASSWORD': 'your_db_pwd',
+        'ENGINE': 'db_engine',
+        'NAME': 'db_name',
+        'HOST': 'db_host',
+        'PORT': 'db_port',
+        'USER': 'db_user',
+        'PASSWORD': 'db_password',
         'CHARSET': 'utf-8',
+        'CON_MAX_AGE': 500,
         'OPTIONS': {
             'sql_mode': 'STRICT_ALL_TABLES'}
     }
@@ -114,7 +122,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Paris'
+TIME_ZONE = 'Europe/London'
 
 USE_I18N = True
 
@@ -123,11 +131,15 @@ USE_L10N = True
 USE_TZ = True
 
 
+# Set the serializer used by the session manager
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/path/to/static/folder/'
+STATIC_ROOT = '/path/to/your/static/folder/'
 
 # Configure logging for the game app
 LOGGING = {
@@ -137,43 +149,90 @@ LOGGING = {
         'simple': {
             'format': "%(asctime)s %(filename)s - %(levelname)s in %(module)s.%(funcName)s at line %(lineno)d:"
                       " %(message)s"
+        },
+        'compact': {
+            'format': "%(asctime)s - %(levelname)s: %(message)s"
         }
     },
     'handlers': {
-        'game': {
+        'console': {
             'level': 'WARNING',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'game': {
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, "game/logs/game.log"),
             'formatter': 'simple'
         },
         'views': {
-            'level': 'WARNING',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, "game/logs/game_views.log"),
             'formatter': 'simple'
         },
-        'dm': {
+        'dm_debug': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, "game/logs/actors_debug.log"),
+            'formatter': 'compact'
+        },
+        'dm_info': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, "game/logs/dungeonMaster.log"),
-            'formatter': 'simple'
+            'filename': os.path.join(BASE_DIR, "game/logs/actors_info.log"),
+            'formatter': 'compact'
+        },
+        'dm_warn': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, "game/logs/actors_warn.log"),
+            'formatter': 'compact'
+        },
+        'dm_error': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, "game/logs/actors_error.log"),
+            'formatter': 'compact'
         },
     },
     'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'WARNING'
+        },
         'Game': {
-            'handlers': ['game'],
-            'level': 'WARNING',
+            'handlers': ['game', 'console'],
+            'level': 'DEBUG',
             'propagate': False,
         },
         'Game.Views': {
-            'handlers': ['views'],
+            'handlers': ['views', 'console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'Game.dm.debug': {
+            'handlers': ['dm_debug'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'Game.dm.info': {
+            'handlers': ['dm_info'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'Game.dm.warn': {
+            'handlers': ['dm_warn', 'console'],
             'level': 'WARNING',
             'propagate': False,
         },
-        'Game.DungeonMaster': {
-            'handlers': ['dm'],
-            'level': 'INFO',
+        'Game.dm.error': {
+            'handlers': ['dm_error', 'console'],
+            'level': 'ERROR',
             'propagate': False,
         },
     },
 }
+
+ADMINS = [('Your Name', 'your_email@address.com')]

@@ -11,6 +11,11 @@ html, body {
 	font-family:celticMd, Verdana, Serif;
 }
 
+body {
+   width: 100%;
+   overflow-x: hidden;
+}
+
 div#content {
 	position: relative;
 	width: 1080px;
@@ -26,6 +31,7 @@ header {
 header div#banner {
 	text-align:center;
 	font-size: 5em;
+   text-shadow: 15px 15px 2px black;
 }
 
 header nav {
@@ -37,7 +43,7 @@ header nav a {
 	padding: 0.8em;
 	margin: 20px;
 	font-weight: normal;
-	font-size: 1.5em;
+	font-size: 1em;
 	color: #d6d6d6;
 	text-decoration:none;
 	background-image: url("../images/site/name_tag_hori.png");
@@ -227,6 +233,36 @@ main section div#new_player_form form label {
 	float: left;
 }
 
+main section div#new_player_form form input[type="checkbox"] {
+   width: 20px;
+   float: right;
+}
+
+main section div#new_player_form form label#tac_label {
+   width: 80%;
+   margin-top: 1em;
+   text-align: left;
+}
+
+main section div#new_player_form form a#tac_link {
+	color: #db8a8a !important;
+	text-decoration: none !important;
+}
+
+main section div#new_player_form form div#consent_form {
+   margin-top: 100px;
+}
+
+main section div#new_player_form form div#consent_form ol {
+   text-align: left;
+   line-height: 2em;
+}
+
+main section div#new_player_form form div#consent_form ol li label {
+   width: 80%;
+   float: none;
+}
+
 main section div#error_message {
 	text-align: center;
 	color: #700;
@@ -257,6 +293,12 @@ main section#create_bot img {
 	position:relative;
 	width: 100%;
 	margin: auto;
+}
+
+main section#play_game img {
+	width: 30%;
+	float: right;
+	padding: 10px;
 }
 
 code, var {

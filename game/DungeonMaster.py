@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from .models import *
+from game.models import *
 from time import sleep
 import logging
 from random import choice
@@ -234,13 +234,16 @@ class DungeonMaster:
             self._logger.info("Turn: {}".format(self._game.turn))
             # For each player
             for player in self._players:
+                # Refresh the player from the database
+                player.refresh_from_db(fields=['action', 'last_answer_time'])
+
                 # Log the state of the player
                 self._logger.debug("{} -> T: {}".format(player, self._trials[player.id]))
 
                 # Update the player's level of gold based on mine ownership
                 self._update_gold_from_mines(player)
                 # Let only non-terminated players play the game
-                if player.state in ["P", "D"] and self._wait_for_action(player):
+                if player.state in ["P", "D"]:
                     if self._wait_for_action(player):
                         acted = False
                         # If there are any items nearby
@@ -285,9 +288,6 @@ class DungeonMaster:
                 commit()
                 player.refresh_from_db(fields=['last_answer_time'])
                 self._times.update({player.id: player.last_answer_time})
-
-                # Refresh the player from the database
-                player.refresh_from_db(fields=['action', 'last_answer_time'])
 
             # Move the skeleton enemies around randomly
             self._move_skeletons()
@@ -666,7 +666,7 @@ class DungeonMaster:
 
         # Simply wait for that time to pass
         cpt = 0
-        while self._times[player.id] == player.last_answer_time and cpt < 10:
+        while self._times[player.id] == player.last_answer_time and cpt < 20:
             cpt += 1
             sleep(0.2)
             player.refresh_from_db(fields=['action', 'last_answer_time'])

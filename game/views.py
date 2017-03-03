@@ -1,26 +1,25 @@
-from .serializers import *
-from .models import *
+from game.serializers import *
+from game.models import *
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Sum
+from django.conf import settings
+import os
 from string import ascii_uppercase, digits
-from random import SystemRandom, choice
-import json
+from random import SystemRandom
+from math import floor
+from thespian.actors import *
+from game.actors.LookupActor import LookupActor
+from game.actors.PlayerLookupActor import PlayerLookupActor
+from game.actors.Settings import LOOKUP_NAME, PLAYER_LOOKUP_NAME
+from game.actors.utils import format_msg, extract_msg
 import logging
 from time import sleep
-from math import floor
-
-#################################################################################
-########################## GLOBAL VARIABLES #####################################
-#################################################################################
-
-BASE_GAME_URL = "http://www.vikingdoom.com/game/play/"
-BOARD_CONFIG_FILES = ['game/maps/json/0.json']  # Insert file names here for board config in json format
 
 #################################################################################
 ########################## HELPER FUNCTIONS #####################################
@@ -33,7 +32,10 @@ def code_generator(size=15):
     :param size: The length of the string to generate.
     :return: String.
     """
-    return ''.join([SystemRandom().choice(ascii_uppercase + digits) for _ in range(size)])
+    code = ''.join([SystemRandom().choice(ascii_uppercase + digits) for _ in range(size)])
+    while User.objects.filter(code__exact=code).count() > 0:
+        code = ''.join([SystemRandom().choice(ascii_uppercase + digits) for _ in range(size)])
+    return code
 
 #################################################################################
 ########################## CLASS BASED VIEWS ####################################
@@ -53,12 +55,6 @@ class ItemViewSet(viewsets.ReadOnlyModelViewSet):
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
-
-    def perform_create(self, serializer):
-        gen_code = code_generator(15)
-        while len(Player.objects.filter(code__exact=gen_code)) > 0:
-            gen_code = code_generator(15)
-        serializer.save(code=gen_code)
 
 
 class BoardViewSet(viewsets.ReadOnlyModelViewSet):
@@ -80,6 +76,10 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def perform_create(self, serializer):
+        gen_code = code_generator()
+        serializer.save(code=gen_code)
+
 
 class MineViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Mine.objects.all()
@@ -95,8 +95,18 @@ class DungeonMasterView(APIView):
     """
     Define a single post method to manage the Game queue.
     """
-    
-    @transaction.atomic
+
+    def __init__(self):
+        """
+        Declare an ActorSystem and LookupActor for later use.
+        """
+
+        # Initialize the parent class
+        super(DungeonMasterView, self).__init__()
+
+        # Declare the ActorSystem and LookupActor
+        self._asys = ActorSystem("multiprocTCPBase")
+
     def put(self, request, player_code='', format=None):
         """
         Create a new game (without map) if necessary or simply add the player to an un-complete game.
@@ -106,41 +116,32 @@ class DungeonMasterView(APIView):
         :return: Json/Xml object containing the details of the Game the user was added to.
         """
 
-        # Log the data received by the post method
-        logger = logging.getLogger("Game.Views")
-        logger.debug("A player (code: {}) asked for a new game.".format(player_code))
+        # Check that the user exist in the database
+        if not User.objects.filter(code__exact=player_code).exists():
+            return Response(data="User does not exist in the database.", status=status.HTTP_404_NOT_FOUND)
 
-        # Query the player from the database
-        player = get_object_or_404(Player, code=player_code)
-        
-        # Check that the player is not already playing another game
-        if player.state != "P":
-            # Retrieve the latest created game with a "Initializing" status
-            games = Game.objects.filter(state__exact="I").order_by('id')
-            if len(games) == 0:
-                # Create a new game
-                game = self._create_game(player)
-            else:
-                # Try adding the player to a game
-                game = games.first()
-                self._add_uniq_player(game, player)
+        # Ask for the ActorAddress of a game the user is not subscribed to
+        data = None
+        subscribed = []
+        game_addr = None
+        lookup = self._asys.createActor(LookupActor, globalName=LOOKUP_NAME)
 
-            # Save the player
-            player.save()
-            # Save the game in the database
-            game.save()
+        while data is None:
+            while game_addr is None or not isinstance(game_addr, ActorAddress):
+                with self._asys.private() as thrd_asys:
+                    game_addr = thrd_asys.ask(lookup, format_msg('addr', data={'subscribed': subscribed}))
 
-            # Initialize the serializer
-            serializer = CustomGameSerializer(game, context={'your_hero': player})
+            subscribed.append(game_addr)
 
-            # Return the game data so far
-            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            # Get the game the player is involved in
-            game = Game.objects.filter(state__exact="P").first()
-            # Serialize the game
-            serializer = CustomGameSerializer(game, context={'your_hero': player})
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+            # Ask the game to create a new player for us
+            with self._asys.private() as thrd_asys:
+                data = thrd_asys.ask(game_addr, format_msg('add_player', data={'code': player_code}))
+
+        # Extract all information from the response
+        game_state = data.get('game_state')
+
+        # Return the game data so far
+        return Response(data=game_state, status=status.HTTP_201_CREATED)
 
     def post(self, request, game_code='', format=None):
         """
@@ -151,128 +152,53 @@ class DungeonMasterView(APIView):
         :return: Json/xml object containing the details of the Game the user is playing.
         """
 
-        # Log the data received by the post method
-        logger = logging.getLogger("Game.Views")
-        logger.debug("Received data for game {} from player: code = {}, action = {}".format(game_code,
-                                                                                            request.data['code'],
-                                                                                            request.data['action']))
+        log = logging.getLogger("Game.Views")
+        # Extract all required information
+        player_action = request.data['action']
+        player_code = request.data['code']
 
-        # Query the corresponding game from the database
-        game = get_object_or_404(Game, code=game_code)
-        # Record the modification time
-        last_mod_time = game.modified
+        # Make sure the user exist in database
+        if not User.objects.filter(code__exact=player_code).exists():
+            return Response(data="User does not exist in the database.", status=status.HTTP_404_NOT_FOUND)
 
-        # Check the game's status
-        if game.state == "P":
-            # Get all the data required for updating the player
-            player_code = request.data['code']
-            action = request.data['action']
+        # Ask for the address of the player actor
+        log.debug("{} - Create the player lookup actor".format(player_code))
+        lookup = self._asys.createActor(PlayerLookupActor, globalName=PLAYER_LOOKUP_NAME)
 
-            # Query the corresponding player object from the database
-            player = get_object_or_404(Player, code=player_code)
+        # Get the player's address
+        log.debug("{} - Ask for the player's address".format(player_code))
+        cpt = 0
+        player_addr = None
+        while cpt < 5 and player_addr is None and not isinstance(player_addr, ActorAddress):
+            with self._asys.private() as thrd_asys:
+                player_addr = thrd_asys.ask(lookup, format_msg('look', data={'game_code': game_code, 'user_code': player_code}))
+            # Only sleep if we did not get the address
+            if player_addr is None:
+                sleep(2)
 
-            # Update the action field and save to the database
-            player.action = action
-            player.save()
-            transaction.commit()
+        # If we still could not find the player's address
+        if player_addr is None or not isinstance(player_addr, ActorAddress):
+            # An error occurred send back a 404
+            return Response(data="An error occurred while looking for your player.", status=status.HTTP_404_NOT_FOUND)
 
-            # Wait until the game is updated to send information back
-            cpt = 0
-            while game.modified == last_mod_time and cpt < 100:
-                del game.modified
-                sleep(0.2)
-                cpt += 1
+        # Ask the PlayerActor for the next action
+        log.debug("{} - Ask for the game to consider the next_action.".format(player_code))
+        with self._asys.private() as thrd_asys:
+            res = thrd_asys.ask(player_addr, format_msg('next_action', data={'action': player_action, 'code': player_code}))
 
-            # Serialize the game
-            serializer = CustomGameSerializer(game, context={'your_hero': player})
-
-            # Return the game data so far
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
-        elif game.state in ["W", "I"]:
-            # If the game is in waiting state send back a 504
-            return Response(status=status.HTTP_504_GATEWAY_TIMEOUT)
-        else:
+        if res is None:  # The player was terminated or the game is finished
             # If the game is finished send back a 503 status
             return Response(status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-    def _create_game(self, player):
-        """
-        Create a new game instance in the database.
-        :param player: An instance of the Player model.
-        :return: Game. The new game instance.
-        """
+        # Extract information from the result
+        action, data, orig = extract_msg(res)
+        if action == 'error':
+            # If the game is in waiting state send back a 504
+            return Response(data=data, status=status.HTTP_504_GATEWAY_TIMEOUT)
 
-        # Generate a random code
-        code = code_generator(15)
-        # Build the url to access the game
-        url = BASE_GAME_URL + code + "/"
-        # Create a new map for the game
-        try:
-            board = self._get_board_from_conf_file()
-        except ValueError:
-            return Response(data="An error occurred while reading the configuration file for the map.",
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except FileNotFoundError:
-            return Response(data="Could not find the configuration file.",
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except IOError:
-            return Response(data="Could not read/access configuration file for the map.",
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        board.save()
-
-        # Return the game object
-        return Game(player_1=player, code=code, url=url, map=board)
-
-    def _get_board_from_conf_file(self):
-        """
-        Read and initialize a new Board from random configuration file.
-        :return: Board. The initialize board from the database.
-        """
-        # Get the configuration file to be used
-        filename = choice(BOARD_CONFIG_FILES)
-
-        # Read the configuration from the file
-        with open(filename, "r") as conf_f:
-            # Load the json data
-            data = json.load(conf_f)
-            # Query the string representation of the map and the path to the background image
-            txt_file = data['str_map']
-            img_path = data['img_path']
-
-        # Get the string representation of the file
-        with open(txt_file, "r") as txt_conf:
-            str_map = txt_conf.readline()
-
-        # Return the initialized board
-        return Board(str_map=str_map, img_path=img_path)
-
-    def _add_uniq_player(self, game, player):
-        """
-        Check if the player is not already in a given game before adding him.
-        :param game: An instance of the Game model.
-        :param player: An instance of the Player model.
-        :return: Boolean. Return True if the player was added to the game, False otherwise.
-        """
-
-        # Check that the player is not already in the game
-        if game.player_1 == player or game.player_2 == player or game.player_3 == player or game.player_4 == player:
-            return False
-        else:
-            # Add the player in an empty spot
-            if game.player_1 is None:
-                game.player_1 = player
-                return True
-            if game.player_2 is None:
-                game.player_2 = player
-                return True
-            if game.player_3 is None:
-                game.player_3 = player
-                return True
-            if game.player_4 is None:
-                game.player_4 = player
-                game.state = "W"
-                return True
+        if action == 'ok':
+            # All went well
+            return Response(data=data, status=status.HTTP_200_OK)
 
 #################################################################################
 ######################## FUNCTION BASED VIEWS ###################################
@@ -296,17 +222,16 @@ def now_playing(request):
 
 # Serves the home page with leaderboard and game display
 def index_view(request):
-    players = Player.objects.all()
     context = {'ranks': []}
-    for player in players.iterator():
+    for user in User.objects.all().iterator():
         # Get all the player's scores
-        scores = Score.objects.filter(player__exact=player)
+        scores = Score.objects.filter(user__exact=user)
         if len(scores) != 0:
             tot_gold = float(scores.aggregate(Sum('score'))['score__sum'])
             # compute his rank
             rank = floor(tot_gold / len(scores))
             # Append the score to the list
-            context['ranks'].append({'username': player.user.username, 'rank': rank})
+            context['ranks'].append({'username': user.username, 'rank': rank})
 
     return render(request, 'game/index.html', context=context)
 
@@ -320,6 +245,12 @@ def rules_view(request):
 def docs_view(request):
     return render(request, 'game/docs.html', {})
 
+
+# Serves the about page, which is static
+def about(request):
+    return render(request, 'game/about.html', {})
+
+
 @transaction.atomic
 # Serves a form for creating new a player
 def new_player_view(request):
@@ -328,17 +259,25 @@ def new_player_view(request):
         first_name = request.POST['fname']
         last_name = request.POST['lname']
         email = request.POST['email']
-        if User.objects.filter(username__exact=username).exists():
+
+        # Remove any whitespace from the information to check if someone has been naughty
+        c_username = username.replace(' ', '')
+        c_f_name = first_name.replace(' ', '')
+        c_l_name = last_name.replace(' ', '')
+        c_email = email.replace(' ', '')
+
+        # Send back some not too pleasing comment
+        if not c_username or not c_f_name or not c_l_name or not c_email:
+            context = {'error_message': "Please do try to enter valid information when registering."}
+        elif User.objects.filter(username__exact=username).exists():
             context = {'error_message': "This username is not available anymore. Please choose another one."}
         elif User.objects.filter(first_name__exact=first_name).exists() and User.objects.filter(last_name__exact=last_name).exists():
-            context = {'error_message': "You seem to already exist in our database.<br/> If this is an error, please"
+            context = {'error_message': "You seem to already exist in our database. If this is an error, please"
                                         " contact the administrator."}
         else:
-            user = User(username=username, first_name=first_name, last_name=last_name, email=email)
+            code = code_generator()
+            user = User(username=username, first_name=first_name, last_name=last_name, email=email, code=code)
             user.save()
-            code = code_generator(15)
-            player = Player(user=user, code=code)
-            player.save()
             context = {'message': code}
     except ValidationError:
         context = {'error_message': "An error occurred, while trying to create a new player for you."}

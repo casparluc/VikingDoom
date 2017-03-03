@@ -11,9 +11,10 @@
                 <div id="banner"><p>VIKING DOOM</p></div>
                 <nav>
                     <a href="{% url 'home' %}">Home</a>
-                    <a href="{% url 'rules' %}">Story & Rules</a>
+                    <a href="{% url 'rules' %}">Rules</a>
                     <a href="{% url 'docs' %}">Docs</a>
                     <a href="{% url 'new_player' %}">Create Player</a>
+                    <a href="{% url 'about' %}">About</a>
                 </nav>
             </header>
             <main>
@@ -27,40 +28,40 @@
                     </p>
                     <p>
                         Well now that you have created a new player and got your code, you can finally start programming your bot. Yes you heard that right, Viking Doom is not a game to be enjoyed by mere humans. It pitches AIs (artificially intelligent bots) against AIs and display the resulting battle on the <a href="{% url 'home' %}">home page</a> for your viewing pleasure.<br/>
-                        To help in your first step you can have a look at the random bot available in the <a href="https://github.com/casparluc/VikingDoom">VikingDoom project</a> on Github. There you should also find the game engine and it accompanying website. This will allow you to test your bot before entering the real battle. Or if you feel like making your own improvements to the game, you can clone the whole project and modify it to your heart content.
+                        To help in your first steps you can have a look at the random bot available in the <a href="https://github.com/casparluc/VikingDoom">VikingDoom project</a> on Github. There you should also find the game engine and its accompanying website. This will allow you to test your bot before entering the real battle. Or if you feel like making your own improvements to the game, you can clone the whole project and modify it to your heart content.
                     </p>
                     <img src="{% static 'game/images/site/game_arch.png' %}" id="game_arch" title="Game architecture"/>
                     <p>
-                        At its core, a bot acts more or less like a simple HTTP Client sending <var>PUT</var> and <var>POST</var> requests to the Viking Doom server and receiving a Json formatted response. It is then up to you to include some logic into it and have it devise some brilliant strategies to always gather more gold, while avoiding danger.<br/>Your bot can be implemented in any language be it JAVA, C, C++ and so on, your are not limited to Python. It just so happen that Python is the admin's favourite language, but it might not be yours.</p>
+                        At its core, a bot acts more or less like a simple HTTP Client sending <var>PUT</var> and <var>POST</var> requests to the Viking Doom server and receiving a Json formatted response. It is then up to you to include some logic into it and have it devise some brilliant strategies to always gather more gold, while avoiding danger.<br/>Your bot can be implemented in any programming language, be it JAVA, C, C++ and so on, your are not limited to Python. It just so happen that Python is the admin's favorite language, but it might not be yours.</p>
                 </section>
                 <section id="init_game">
                     <h2>Request a game</h2>
                     <p>
-                        To begin a new game, well you simply ask for it: "Hey, Barkeep! One adventure, please.".<br/>By sending a <var>PUT</var> request to the url <code>http://www.vikingdoom.com/game/new/your_code_here/</code>, where <var>your_code_here</var> has to be replaced by the code given to you upon creation of a new player.<br/>As an answer the server will send a Json formatted <a href="#game_obj">game object</a> back. The game object, described in more details below, contains all manner of information, but the most important one in this case is the <var>URL</var> attribute. This contains the url at which you will send <var>POST</var> requests to move your hero around.
+                        To begin a new game, well you simply ask for it: "Hey, Barkeep! One adventure, please.".<br/>By sending a <var>PUT</var> request to the url: <code>http://www.vikingdoom.com/game/new/your_code_here/</code>, where <var>your_code_here</var> has to be replaced by the code given to you upon creation of your player.<br/>As an answer the server will send a Json formatted <a href="#game_obj">game object</a> back. The game object (described in more details below) contains all manner of information, but the most important one in this case is the <var>URL</var> attribute. This contains the url at which you will send <var>POST</var> requests to move your hero around.
                     </p>
                     <p>
-                        Before going further into playing the actual game, there is a bit more to you have to know. Upon sending the <var>PUT</var> request, the server can send back 1 of the 3 the following HTTP status code, each with its own meaning:</p>
+                        Before going further into playing the actual game, there is a bit more you have to know. Upon sending the <var>PUT</var> request, the server can send back one of the three following HTTP status code, each with its own meaning:</p>
                         <ul>
-                            <li><code>200_OK</code>: You have already been added to the game. If nothing is happening it might be because the game is waiting for more player to join, or because the previous game has not finished yet and your game is in the queue.</li>
-                            <li><code>404_NOT_FOUND</code>: No player associated to the code you sent can be found. Make sure you are sending the right code and that the url is correctly formatted. If things persist, ask the admin for help or leave a message on the project's Github page.</li>
                             <li><code>201_CREATED</code>: Good news, your player has been found and added to a game. You are now good to go to the next section.</li>
+                            <li><code>409_CONFLICT</code>: Apparently, a player associated with your user is already part of this game. Since, users can only have one player per game, it means you will have to ask to be added to another game. (Usually, you should not see this status, unless the server experienced some difficulties and has been forcefully rebooted).</li>
+                            <li><code>404_NOT_FOUND</code>: No player associated with the code you sent can be found. Make sure you are sending the right code and that the url is correctly formatted. If things persist, ask the admin for help or leave a message on the project's <a href="https://github.com/casparluc/VikingDoom">Github page.</a></li>
                         </ul>
                 </section>
                <section id="play_game">
                   <h2>Play a game</h2>
                   <p>
-                      Playing the actual game will follow a pattern similar to that of asking for a new game. You simply send the action, you want your hero to perform next, through a <var>POST</var> request and wait for the server to send you the Json formatted game state. Repeat the same 2 steps until your player is <code>Terminated</code> or the game is <code>Finished</code>.
+                      Playing the actual game will follow a pattern similar to that of asking for a new game. You simply send the action, you want your hero to perform next, through a <var>POST</var> request and wait for the server to send you the Json formatted game state. Repeat the same two steps until your player is <code>Terminated</code> or the game is <code>Finished</code>.
                   </p>
                    <p>
-                       When asking for a new game you will have received and parsed the Json formatted response. As mentioned earlier, the game object contains the <var>url</var> to which you should address all of you <var>POST</var> requests for the coming game. The body of the request should contain:</p>
+                       When asking for a new game you will have received and parsed the Json formatted response. As mentioned earlier, the game object contains the <var>url</var> to which you should address all of your <var>POST</var> requests for the up coming game. The body of the request should contain:</p>
                        <ul>
-                            <li>code (required): The code corresponding to your player.</li>
+                            <li>code (required): The 15 alphanumeri characters corresponding to your player.</li>
                             <li>action (required): The action you want your hero to perform next, see <a href="#avail_acts">available actions</a> if you are not sure what to put in there.</li>
                        </ul>
                    <p>
                         Shortly after the server will send back a game object, that you can parse to take decisions about your next move. As stated in the <a href="{% url 'rules' %}#rules">rules</a>, you have 1 second maximum to send your next action and it has to be a valid move. Fail to do so more than three times and your player will be <code>Terminated</code>. You will still be able to send actions, but none will be considered by the game engine.<br/>
-                        If everything goes well for your bot/hero and you manage to send actions for 1000 turns, the game will enter its <code>Finished</code> state. Your score for the game will be recorded in the database and combined will your previous scores to form your rank. Once a game is <code>Finished</code> you can no longer send any actions.<br/>
-                   As for the previous phase, sending a <var>POST</var> request can result in 4 different HTTP status code:
+                        If everything goes well for your bot and you manage to send actions for 1000 turns, the game will enter its <code>Finished</code> state. Your score for the game will be recorded in the database and combined with your previous scores to form your rank. Once a game is <code>Finished</code> you can no longer send any actions.<br/>
+                   As for the previous phase, sending a <var>POST</var> request can result in four different HTTP status codes:
                    </p>
                         <ul>
                             <li><code>504_GATEWAY_TIMEOUT</code>: The game is still waiting for more players to join. Or the previous game is not finished yet and this one is still in the queue.</li>
@@ -71,19 +72,17 @@
                   <h3 id="game_obj">The game object</h3>
                      <p>
                          The game object is the top level container. It includes information about the map, all heroes, your hero in particular and the aforementioned <var>url</var>.<br/>
-                         There is an example of a game object:
+                         Here is an example of a game object:
                      </p>
                          <pre>game: <span id="pre_game"></span></pre>
                      <p>
                          The different fields are:
                      </p>
                             <ul>
-                                <li><var>map</var>: A map object, containing information about the board. See <a href="#map_obj">map object</a> for more details of its content.</li>
-                                <li><var>player_#</var>: In each game 4 players are participating. These player objects contain the hero's stats (its health, gold, position and more). See <a href="#hero_obj">hero object</a> below for a tour of its content.</li>
+                                <li><var>map</var>: A map object, containing information about the board. See <a href="#map_obj">map object</a> for more details on its content.</li>
+                                <li><var>players</var>: In each game 4 players are participating. This list of player objects contains the heros' stats (health, gold, position and more). See <a href="#hero_obj">hero object</a> below for a tour of the content.</li>
                                 <li><var>turn</var>: This is a simple integer indicating the turn to which this object corresponds to. The turn meter begins at 0 and goes to a maximum of 1000.</li>
-                                <li><var>terminated</var>: A boolean value. Set to <code>TRUE</code> if the game was forcefully terminated (which should not happen). Otherwise it defaults to <code>FALSE</code></li>
-                                <li><var>modified</var>: This is a timestamp representing the last time the object was modified in the database. You can safely ignore that information when creating a bot.</li>
-                                <li><var>url</var>: The <var>url</var> to which you will have to send all your action in the shape of <var>POST</var> requests.</li>
+                                <li><var>url</var>: The <var>url</var> to which you will have to send all your actions in the shape of <var>POST</var> requests.</li>
                                 <li><var>code</var>: Similar to the code attributed to each player, this string of 15 alphanumeric characters is an identifier for this game.</li>
                                 <li><var>state</var>: A single character representing the game's state:
                                     <ul>
@@ -98,8 +97,8 @@
                             </ul>
                   <h3 id="map_obj">The Map object</h3>
                      <p>
-                         The map object include information relevant to the board that your player is currently walking, fighting and dying on.<br/>
-                         Here is a close up on the map object alone (from the previous example):
+                         The map object includes information relevant to the board that your player is currently walking, fighting and dying on.<br/>
+                         Here is a close up of the map object alone (from the previous example):
                      </p>
                         <pre>map: <span id="pre_map"></span></pre>
                      <p>
@@ -107,7 +106,6 @@
                      </p>
                         <ul>
                             <li>str_map: A string representation of the current state of the map.</li>
-                            <li>img_path: The relative path where you can find the background image for the map. Not really important for building your bot, so just ignore it.</li>
                             <li>width: An integer representing the width of the map in columns. Or if you prefer the size of the map along the X axis.</li>
                             <li>height: An integer representing the height of the map in rows. Or if you prefer the size of the map along the Y axis.</li>
                         </ul>
@@ -119,39 +117,40 @@
                                 <li><var>##</var>: A simple wall. You cannot step on such tiles.</li>
                                 <li><var>$_</var>: A mine that do not belong to anyone.</li>
                                 <li><var>$1</var>: A mine that belongs to the first player.</li>
-                                <li><var>@1</var>: The hero belonging to player 1.</li>
+                                <li><var>@1</var>: The hero controlled by the first player.</li>
                                 <li><var>!S</var>: An enemy unit: 
-					<ul>
-						<li><var>S</var>: Reference skeleton units.</li>
-						<li><var>D</var>: Represent The Dragon.</li>
-					</ul>
-				</li>
+                                <ul>
+                                    <li><var>S</var>: References skeleton units.</li>
+                                    <li><var>D</var>: Represents The Dragon.</li>
+                                </ul>
+                            </li>
                                 <li><var>?P</var>: An item: 
-					<ul>
-						<li><var>P</var>: For potion.</li>
-						<li><var>G</var>: For a purse full of gold.</li>
-						<li><var>B</var>: For a chest of gold.</li>
-					</ul>
-				</li>
+                                    <ul>
+                                        <li><var>P</var>: For potion.</li>
+                                        <li><var>G</var>: For a purse full of gold.</li>
+                                        <li><var>B</var>: For a chest of gold.</li>
+                                    </ul>
+                                </li>
                                 <li><var>~P</var>: A market. With :
-					<ul>
-						<li><var>P</var>: for potion selling market</li>
-						<li><var>U</var>: for strength upgrade caravan.</li>
-					</ul>
-				</li>
+                                    <ul>
+                                        <li><var>P</var>: for potion selling markets.</li>
+                                        <li><var>U</var>: for strength upgrade caravans.</li>
+                                    </ul>
+                                </li>
                             </ul>
                         <p>
                             Beware: Orc units are not represented in the encoded map since each mine has an orc guarding it. As the saying goes: "Where there is a mine, there is an orc!".
                         </p>
                   <h3 id="hero_obj">The Hero object</h3>
                      <p>
-                         Inside the global game container, there are 5 hero objects. One for each player and a shortcut to your hero (aptly named <var>your_hero</var>). These objects gather stats concerning their respective hero as seen in the following example:
+                         Inside the global game container, there are five hero objects. One for each player and a shortcut to your hero (aptly named <var>your_hero</var>). These objects gather stats concerning their respective hero as seen in the following example:
                      </p>
                         <pre>player: <span id="pre_hero"></span></pre>
                      <p>
                         Where:
                      </p>
                             <ul>
+                               <li><var>hero_id</var>: An integer identifying which hero you play as in the game.</li>
                                 <li><var>pos_x</var>: Is the current position of the hero along the X axis.</li>
                                 <li><var>pos_y</var>: Is the current position of the hero along the Y axis.</li>
                                 <li><var>spawn_x</var>: Is the initial / respawn position of the hero along the X axis.</li>
@@ -166,11 +165,10 @@
                                         <li><var>T</var>: Terminated</li>
                                     </ul>
                                 </li>
-                                <li><var>action</var>: Most often this field will be empty since the game engine consumes the player's action. You can ignore it when implementing your bot.</li>
-                                <li><var>last_action</var>: A single character representing the last action performed by the hero. In addition to the <a href="#avail_acts">available actions below</a>, this fields can take the values:
+                                <li>
+                                   <var>action</var>: A single character representing the action performed by the hero during the last turn. In addition to the <a href="#avail_acts">available actions below</a>, this fields can take the values:
                                     <ul>
                                         <li><var>F</var>: Fight</li>
-                                        <li><var>D</var>: Drink</li>
                                         <li><var>B</var>: Buy</li>
                                     </ul>
                                 </li>
@@ -181,14 +179,14 @@
                   <h3 id="avail_acts">Available actions</h3>
                     <img src="{% static 'game/images/site/avail_dirs.png' %}" id="avail_dirs" title="Available movement directions"/>
                      <p>
-                         Even though, they are called acitons all along the documentation, the orders the player send for his hero is more of a direction for the hero's next move. Thus, as the picture above shows, in your <var>POST</var> request the <var>action</var> variable can contain only one of the following letters:
+                         Even though, they are called actions all along the documentation, the orders the player send for his hero is more of a direction for the hero's next move. Thus, as the picture above shows, in your <var>POST</var> request the <var>action</var> variable can contain only one of the following characters:
                      </p>
                     <ul>
-                        <li><var>N</var>: going upward along the Y axis</li>
-                        <li><var>W</var>: going left along the X axis</li>
-                        <li><var>S</var>: going down the Y axis</li>
-                        <li><var>E</var>: going right along the X axis</li>
-                        <li>And finally <var>'I'</var>: stands for idle ,if you wish for your hero to remain standing on his present tile</li>
+                        <li><var>N</var>: going upward along the Y axis.</li>
+                        <li><var>W</var>: going left along the X axis.</li>
+                        <li><var>S</var>: going down the Y axis.</li>
+                        <li><var>E</var>: going right along the X axis.</li>
+                        <li>And finally <var>'I'</var>: stands for idle ,if you wish for your hero to remain standing on his present tile.</li>
                     </ul>
 		<h2>Help</h2>
 			<p>

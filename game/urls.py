@@ -2,7 +2,7 @@
 from django.conf import settings
 from django.conf.urls import url, include
 from django.conf.urls.static import static
-from . import views
+from game import views
 from rest_framework.routers import DefaultRouter
 from rest_framework.schemas import get_schema_view
 

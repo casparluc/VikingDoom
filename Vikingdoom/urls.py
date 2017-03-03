@@ -22,6 +22,6 @@ urlpatterns = [
     url(r'^rules/$', g_views.rules_view, name='rules'),
     url(r'^docs/$', g_views.docs_view, name='docs'),
     url(r'^new_player/$', g_views.new_player_view, name='new_player'),
+    url(r'^about/$', g_views.about, name='about'),
     url(r'^game/', include('game.urls')),
-    url(r'^admin/', admin.site.urls),
 ]

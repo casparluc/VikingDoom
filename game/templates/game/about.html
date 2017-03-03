@@ -1,0 +1,83 @@
+{% load static %}
+<html lang="en">
+    <head>
+        <link rel="stylesheet" type="text/css" href="{% static 'game/style/main.css' %}" />
+        <meta charset="UTF-8">
+        <title>Viking Doom | New Player</title>
+    </head>
+    <body>
+        <div id="content">
+            <header>
+                <div id="banner"><p>VIKING DOOM</p></div>
+                <nav>
+                    <a href="{% url 'home' %}">Home</a>
+                    <a href="{% url 'rules' %}">Rules</a>
+                    <a href="{% url 'docs' %}">Docs</a>
+                    <a href="{% url 'new_player' %}">Create Player</a>
+                    <a href="{% url 'about' %}">About</a>
+                </nav>
+            </header>
+            <main>
+               <section id="intro">
+                  <p>
+                     Well my dear friends I hope you had fun so far, because it is about to get really serious here. This page will detail everything you have to know about Viking Doom, why does it exist in the first place? What are those terms and conditions you just agreed to without reading them? And how will your data be used to further our knowledge of the world? (Did not I tell you it was getting real? Well you have been warned.)
+                  </p>
+               </section>
+                <section id="about">
+                  <h1>Viking Doom an origin story</h1>
+                     <p>
+                        For you to fully grasp the details hidden behind Viking Doom and how it came to life, let us rewind time a little bit and make the introduction again. "Viking Doom" the game and website are part of an experiment for a PhD project, which is officially titled: "The Role of Emotions in Autonomous Social Agents". As you might have already guessed from the original title, this project is mainly interested in understanding what emotions are and how they are produced in the animal's brain (human included). But the goal is not limited to the understanding. Using the knowledge gathered by many a scientist in the fields of affective science, neuroscience, cognitive science and Artificial Intelligence (AI) in general, the overall aim is to build a robust <a href="https://en.wikipedia.org/wiki/Cognitive_architecture">cognitive architecture</a> allowing artificial agents to have and use emotions. To put it in more simple terms, the objective is to build a "fake" brain allowing robots, real and virtual, to make decisions based on data gathered through their sensors and to use emotions to adapt and survive in dynamic environments.<br/>
+                        At this point, you might be wondering how this is all related to playing games with vikings, skeletons, orcs and dragons. From a scientific point of view, Viking Doom could be classified as a standard "resource foraging" task. The idea behind this kind of problems is to have multiple agents cooperate or compete in a dynamic environment to gather as much of a given resource (in our case gold) as possible in the most efficient manner. In the case of this project, the most efficient manner is defined by a strategy allowing agents to strike a balance between gathering gold, staying alive as long as possible and increasing the agent's strength.<br/>
+                        Even though artificial intelligence seems to have made tremendous leaps forward these past few years, robots still perform poorly in those tasks since the knowledge required is not restricted to one specific domain, and so not easily encoded into a set of rules to follow. Animals on the other hand have evolved multitudes of mechanisms allowing them to efficiently survive in all kinds of environments. It is our belief that emotions are at the core of those mechanisms. After all the reason you do not put your hand in a fire, is for fear of burning yourself. Emotions in their primitive form are drivers for our survival.<br/>
+                        Thus, by implementing these "survival circuits" present in the animal's brain, in populations of artificial neurons, we hope to create a more robust basis upon which other cognitive architecture can be build. Moving one step closer to achieving human-level intelligence in robots.
+                     </p>
+                     <p>
+                        Where then do you, the user, fit into this endeavor? Viking Doom has been implemented as a free open source game, for multiple reasons: to have fun while experimenting with AI, if you are a beginner, or to assemble your team, devise the best possible strategy and make your way up the ranks, if you so desire. However, in our point of view it mostly provides a fertile ground where our architecture will have to prove itself, facing original opponents and being pushed to its limits. In the end it will ensure that no stone has been left unturned and give weight to the results that will be incorporated in the final thesis.<br/>
+                        But, rest assured you are not just another lab rat being experimented on (you do have the right to delete your account if you so choose). Viking Doom is here to provide fun, hopefully build an interactive and friendly community, while still being part of a PhD project and making science move forward one step at a time.
+                     </p>
+                </section>
+                <section id="data_conf">
+                  <h1>Data, confidentiality and results</h1>
+                     <p>
+                        As Adam Savage once said: "Remember kids, the difference between simply messing around and a scientific experiment, is taking notes.". Viking Doom is no exception to the rule, data has to be gathered and will be analyzed for us to be able to draw conclusions regarding our main objectives and publish our findings. But what exactly is being recorded? Where? And should you worry about your privacy?<br/>
+                        The personal information (name and e-mail address) that you provided, when registering a <a href="{% url 'new_player' %}">new player</a> are all stored in a secure database on our servers. This kind of data is private and will never be displayed on the website, apart from your username that will identify your robot on the leaderboard. As for the rest, it will only be used in two scenarios:</p>
+                        <ul>
+                           <li>
+                              If you, or your team, manages to implement one of the best robot playing Viking Doom and it clearly outperforms any other. We might contact you via e-mail asking for more details on your strategy, possibly your source code and most importantly for your permission to use these additional information in our study.
+                           </li>
+                           <li>
+                              At the polar opposite, if we receive any complaints of a person misbehaving, in game or on the github pages, a warning will be sent to him or her in the form of an e-mail. If an individual persist in such improper behaviors, his/her account will be deleted and all progress made so far will be lost.<br/>
+                              The goal is not to threaten you into submission, but as stated earlier to build a friendly community around Viking Doom. And for this to happen on the Internet, some moderation is required.
+                           </li>
+                        </ul>
+		     <p>
+                        The personal information that you fill in for the creation of a <a href="{% url 'new_player' %}">new player</a> will not appear in any publications or be used to establish a link between you and the rest of your data. It will be kept confidential at all time.
+                     </p>
+                     <p>
+                        The second type of data, that are being gathered and more relevant to our project's objectives, are the games' states. That is to say that for each turn of each game, the position of each item, enemy, mines and the status of each hero will be written in a file and stored on our servers. Using these states and the actions requested by you the user for each turn of a game, we will be able to analyze the behaviors implemented and compare them to that of our own architecture. This in turn will allow us to assess its performances in terms of survival skills.<br/>
+                        The game state that is being recorded each turn is similar to the <a href="{% url 'docs' %}#game_obj">response</a> sent by the server when you request an action to be performed by your hero. The main difference being that the <a href="{% url 'docs' %}#map_obj">map object</a> contains the details of each items, enemies, mines and markets, rather than an encoded string representation. And finally, the <a href="{% url 'docs' %}#game_obj"><var>your_hero</var></a> attribute is left out since it is a redundancy and only helps the actual player access his/her hero's status more quickly.<br/>
+                        Since the game state are broadcast to all participants, great care has been taken to make sure that it is anonymous and cannot be linked to any particular user (player's code, username and id have been removed from the <a href="{% url 'docs' %}#game_obj">game object</a>). The same remains valid for the game state recorded on our servers. Thus, nowhere in our study or publication thereof, will it be possible to establish a connection between our results and a particular individual, who took part in our experiment.
+                     </p>
+                     <p>
+                        Last but not least, it is important for you to know that the Viking Doom experiment is scheduled to begin on the 1<sup>st</sup> of April 2017 and last for a month (may be subject to extension depending on the results obtained). At the end of April, the website will remain online and players will still be able to enjoy Viking Doom to its fullest, but no more data will be gathered concerning the games played.<br/>
+                        Furthermore, at the end of the PhD project (on the 24<sup>th</sup> of September 2017) all data concerning the games will be transfered onto the servers of <a href="https://www.sheffield.ac.uk/">The University of Sheffield</a>, where the study is happening, so that future research project might make use of them. However, your personal information (name and e-mail address) will remain on the servers hosting Viking Doom's website and will not be shared along with the rest of the data.<br/>
+                        Once both the experiment and the PhD project are finished, Viking Doom will continue to exist as an independent project and be maintained to the best of our ability for your enjoyment.
+                     </p>
+                </section>
+                </section>
+                <section id="thanks">
+                   <h1>Thank you</h1>
+                   <p>
+                      Tank you very much for playing Viking Doom with us and helping our project. We really hope that you enjoy the ride!
+                   </p>
+                </section>
+                <section id="publications">
+                   <h1>Publications</h1>
+                   <p>
+                      Coming Soon
+                   </p>
+                </section>
+            </main>
+        </div>
+    </body>
+</html>

@@ -5,6 +5,7 @@ import requests
 import logging
 from time import sleep
 from datetime import date
+import ujson
 
 
 class RandomBot:
@@ -32,6 +33,7 @@ class RandomBot:
             # Initialize variables related to the hero and the game
             self._player_state = "I"
             self._game_state = "I"
+            self._session = requests.Session()
         else:
             raise ValueError("Error: player_code cannot be empty.")
 
@@ -43,7 +45,7 @@ class RandomBot:
 
         # Send a simple put request to the server and retrieve the result
         try:
-            result = requests.put("http://127.0.0.1:8000/game/new/{}/".format(self._player_code), timeout=30)
+            result = self._session.put("http://localhost:8000/game/new/{}/".format(self._player_code), timeout=30)
         except requests.ConnectTimeout as e:
             # Write an error message to the logs
             self._logger.exception("Connection timeout: {}".format(e))
@@ -57,8 +59,8 @@ class RandomBot:
 
         # Check the response status.
         # If no exception occurred process the data sent back by the server
-        json_data = result.json()
-        self._logger.debug("Game request successful: {}".format(json_data))
+        json_data = ujson.loads(result.json())
+        self._logger.debug("Game request successful: {}, {}".format(json_data, type(json_data)))
         self._game_state = json_data['state']
         self._player_state = json_data['your_hero']['state']
 
@@ -83,7 +85,7 @@ class RandomBot:
 
             # Send the request
             try:
-                r = requests.post(url=url, data=payload, timeout=30)
+                r = self._session.post(url=url, data=payload, timeout=30)
             except requests.ConnectTimeout as e:
                 # Write an error message to the logs
                 self._logger.exception("Connection timeout: {}".format(e))
@@ -103,14 +105,14 @@ class RandomBot:
             if r.status_code == 504:  # A status code of 504 indicate that the game has been put in the waiting queue
                 sleep(0.8)
                 continue
-            elif r.status_code == 503:  # A status code of 503 indicate that the game is finished and you can no longer send actions
+            elif r.status_code == 503 or r.status_code == 500:  # A status code of 503 indicate that the game is finished and you can no longer send actions
                 self._game_state = "F"
                 continue
 
             # Write the response in the logs
             self._logger.debug("Action successfully sent: {}".format(r.json()))
             # Check if the player has been terminated
-            json_data = r.json()
+            json_data = ujson.loads(r.json())
             self._game_state = json_data['state']
             hero = json_data['your_hero']
             self._player_state = hero['state']
