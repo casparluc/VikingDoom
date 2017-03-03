@@ -44,20 +44,23 @@ All great installation begin with a little bit of cloning. In this case you will
 Installing all of the required and even the optional modules is quite easy, since they are all available through the python package manager. On Linux all you need to do is:
 1. Open a new terminal window.
 2. And type in the following commands (depending on your system, you might have to be root to execute those commands):
-   `$> pip3 install Django
+   ```$> pip3 install Django
    $> pip3 install coreapi
    $> pip3 install djangorestframework
    $> pip3 install thespian
    $> pip3 install websockets
    $> pip3 install requests
-   $> pip3 install mysqlclient`
+   $> pip3 install mysqlclient
+   ```
 
 Next, you will have to install and configure a database for use in Django. If you decided to go with MySQL, installing the basic database on Linux can be done through the distribution's package manager:
 On Ubuntu:
-   `$> sudo apt-get install mariadb-common`
+   ```$> sudo apt-get install mariadb-common
+   ```
 
 On Arch Linux:
-   `$> sudo pacman -S mariadb`
+   ```$> sudo pacman -S mariadb
+   ```
 
 For other distributions and more on how to configure the database, you can find information on [MariaDB's website](https://mariadb.com/kb/en/mariadb/getting-installing-and-upgrading-mariadb/).
 Once your database is configured and running, be sure to fill in your database's configuration details in Viking Doom's `VikingDoom/settings.py` file. There is a section dedicated to databases, where you will have to provide a name for you db, a user along with its password and the host and port of the machine running the database. Again, more information on how to set a database for a Django project can be found in [Django's documentation](https://docs.djangoproject.com/en/1.10/ref/settings/#databases).
