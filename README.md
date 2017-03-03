@@ -37,3 +37,36 @@ Here are some modules that are not essential for the main Viking Doom applicatio
    2. Requests (Only required if you intend to use the Random bot for testing): A neat little library providing all the functions you need to write a robust HTTP client in python.
    3. Ujson: An optimized library for encoding / decoding python objects into JSON strings. Python already has a built-in json module, but Ujson is simply faster.
 
+# Installation
+
+All great installation begin with a little bit of cloning. In this case you will have to clone the VikingDoom's project on your computer. Make sure that your user has read / write permissions to the directory in which VikingDoom will reside, then simply execute `$> git clone https://github.com/casparluc/VikingDoom.git`.
+
+Installing all of the required and even the optional modules is quite easy, since they are all available through the python package manager. On Linux all you need to do is:
+1. Open a new terminal window.
+2. And type in the following commands (depending on your system, you might have to be root to execute those commands):
+   `$> pip3 install Django`
+   `$> pip3 install coreapi`
+   `$> pip3 install djangorestframework`
+   `$> pip3 install thespian`
+   `$> pip3 install websockets`
+   `$> pip3 install requests`
+   `$> pip3 install mysqlclient`
+
+Next, you will have to install and configure a database for use in Django. If you decided to go with MySQL, installing the basic database on Linux can be done through the distribution's package manager:
+On Ubuntu:
+   `$> sudo apt-get install mariadb-common`
+
+On Arch Linux:
+   `$> sudo pacman -S mariadb`
+
+For other distributions and more on how to configure the database, you can find information on [MariaDB's website](https://mariadb.com/kb/en/mariadb/getting-installing-and-upgrading-mariadb/).
+Once your database is configured and running, be sure to fill in your database's configuration details in Viking Doom's `VikingDoom/settings.py` file. There is a section dedicated to databases, where you will have to provide a name for you db, a user along with its password and the host and port of the machine running the database. Again, more information on how to set a database for a Django project can be found in [Django's documentation](https://docs.djangoproject.com/en/1.10/ref/settings/#databases).
+
+While you are editing the `VikingDoom/settings.py` configuration file, there are three more settings that require your attention:
+1. `SECRET_KEY`: It is a string of 50 random characters used by Django to encrypt most of its communications. If you are unsure how to generate your own secret key, you can use a this dedicated [on-line tool](http://www.miniwebtool.com/django-secret-key-generator/).
+2. `STATIC_ROOT`: This should contain the absolute path to the folder `game/static/` that reside inside the VikingDoom directory you just cloned. On Linux systems this path might look something like: `/home/user/VikingDoom/game/static/`.
+3. `ADMINS`: Finally, almost done. This setting is optional if you only intend to use VikingDoom as a local server. But if you ever want to use it in production, `ADMINS` should be a list of the website's administrators along with their email addresses (e.g.: `[('John Smith', 'agent.smith@gmail.com'), ('Rial Tuto', 'tuto@vikingdoom.com')]`).
+
+And for the last step, before using VikingDoom you will have to populate the database (for the moment it should be empty if you just did a fresh installation). In the root directory of the project you should see a file name `manage.py`. This script is a convenience offered by Django to literally manage many aspects of a project. In this instance all you need to do is to execute all the database migrations required by each applications. So, making sure your database is running and correctly configured, simply run: `python3 manage.py migrate`.
+
+And that is it. You are done for the installation process. Sorry it was quite long to get here, but from now on it will be fun all around.
