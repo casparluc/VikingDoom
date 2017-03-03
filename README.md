@@ -44,7 +44,8 @@ All great installation begin with a little bit of cloning. In this case you will
 Installing all of the required and even the optional modules is quite easy, since they are all available through the python package manager. On Linux all you need to do is:
 1. Open a new terminal window.
 2. And type in the following commands (depending on your system, you might have to be root to execute those commands):
-   ```$> pip3 install Django
+   ```
+   $> pip3 install Django
    $> pip3 install coreapi
    $> pip3 install djangorestframework
    $> pip3 install thespian
@@ -54,12 +55,15 @@ Installing all of the required and even the optional modules is quite easy, sinc
    ```
 
 Next, you will have to install and configure a database for use in Django. If you decided to go with MySQL, installing the basic database on Linux can be done through the distribution's package manager:
+
 On Ubuntu:
-   ```$> sudo apt-get install mariadb-common
+   ```
+   $> sudo apt-get install mariadb-common
    ```
 
 On Arch Linux:
-   ```$> sudo pacman -S mariadb
+   ```
+   $> sudo pacman -S mariadb
    ```
 
 For other distributions and more on how to configure the database, you can find information on [MariaDB's website](https://mariadb.com/kb/en/mariadb/getting-installing-and-upgrading-mariadb/).
@@ -70,6 +74,9 @@ While you are editing the `VikingDoom/settings.py` configuration file, there are
 2. `STATIC_ROOT`: This should contain the absolute path to the folder `game/static/` that reside inside the VikingDoom directory you just cloned. On Linux systems this path might look something like: `/home/user/VikingDoom/game/static/`.
 3. `ADMINS`: Finally, almost done. This setting is optional if you only intend to use VikingDoom as a local server. But if you ever want to use it in production, `ADMINS` should be a list of the website's administrators along with their email addresses (e.g.: `[('John Smith', 'agent.smith@gmail.com'), ('Rial Tuto', 'tuto@vikingdoom.com')]`).
 
-And for the last step, before using VikingDoom you will have to populate the database (for the moment it should be empty if you just did a fresh installation). In the root directory of the project you should see a file name `manage.py`. This script is a convenience offered by Django to literally manage many aspects of a project. In this instance all you need to do is to execute all the database migrations required by each applications. So, making sure your database is running and correctly configured, simply run: `python3 manage.py migrate`.
+And for the last step, before using VikingDoom you will have to populate the database (for the moment it should be empty if you just did a fresh installation). In the root directory of the project you should see a file name `manage.py`. This script is a convenience offered by Django to literally manage many aspects of a project. In this instance all you need to do is to execute all the database migrations required by each applications. So, making sure your database is running and correctly configured, simply run: 
+```
+python3 manage.py migrate
+```
 
 And that is it. You are done for the installation process. Sorry it was quite long to get here, but from now on it will be fun all around.
