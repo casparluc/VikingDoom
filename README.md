@@ -44,13 +44,13 @@ All great installation begin with a little bit of cloning. In this case you will
 Installing all of the required and even the optional modules is quite easy, since they are all available through the python package manager. On Linux all you need to do is:
 1. Open a new terminal window.
 2. And type in the following commands (depending on your system, you might have to be root to execute those commands):
-   `$> pip3 install Django`
-   `$> pip3 install coreapi`
-   `$> pip3 install djangorestframework`
-   `$> pip3 install thespian`
-   `$> pip3 install websockets`
-   `$> pip3 install requests`
-   `$> pip3 install mysqlclient`
+   `$> pip3 install Django
+   $> pip3 install coreapi
+   $> pip3 install djangorestframework
+   $> pip3 install thespian
+   $> pip3 install websockets
+   $> pip3 install requests
+   $> pip3 install mysqlclient`
 
 Next, you will have to install and configure a database for use in Django. If you decided to go with MySQL, installing the basic database on Linux can be done through the distribution's package manager:
 On Ubuntu:
