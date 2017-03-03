@@ -80,3 +80,32 @@ python3 manage.py migrate
 ```
 
 And that is it. You are done for the installation process. Sorry it was quite long to get here, but from now on it will be fun all around.
+
+
+# Testing
+
+For testing purposes and to provide you with a basic example of what a bot might look like, a python implementation of a random strategy can be found in `bot/RandomBot.py`. But before you can have your fun there is a few things to launch.
+Open a new terminal window and navigate into the root directory of the VikingDoom project. Once there, you can launch a HTTP server (only meant for testing, not production) by running the command:
+```
+python3 manage.py runserver
+```
+If you open a web-browser and go to the url `http://localhost:8000` you should land on the home page of the Viking Doom's website. Now go to the `Create Player` page and create at least four new users (each game has four players and a player can only subscribe to the same game once). Make sure to keep the user codes somewhere safe, since you will be using them for later testing.
+
+In another terminal window and from the root directory of the VikingDoom project, run:
+```
+python3 game/actors/Init.py
+```
+To test your installation or your own strategy, the only thing left to do is launch four bots. If you are using the provided `RandomBot.py` script, all you need to do is:
+```
+python3 bot/RandomBot.py your_user_code_here
+```
+Were you might want to replace `your_user_code_here` with the codes you got when creating your players in the previous steps.
+
+After the fourth player has joined the game, the game engine should launch a new match. If you go back to on the home page of the Viking Doom's website the game will be displayed in real-time.
+
+# Issues
+
+Any issue should be reported on the `issue` page. Please do try to give as much details, concerning your problem, as possible to speed up the debugging process.
+
+
+Hope you will enjoy playing Viking Doom.
