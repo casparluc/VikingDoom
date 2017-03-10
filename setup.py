@@ -45,5 +45,5 @@ setup(
     ],
         "bot": ["logs/*"],
     },
-    data_files=[('', ['manage.py', 'robots.txt'])]
+    data_files=[('', ['manage.py'])]
 )
