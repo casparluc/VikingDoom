@@ -30,7 +30,7 @@ PLAYER_LOOKUP_NAME = "PlayerLookup"
 
 MAX_GAMES = 2
 
-WS_SERVER_HOST = 'localhost'
+WS_SERVER_HOST = 'www.vikingdoom.com'
 WS_SERVER_PORT = 8765
 WS_URL = "ws://{}:{}/produce".format(WS_SERVER_HOST, WS_SERVER_PORT)
 
@@ -44,5 +44,21 @@ DRAGON_HEALTH = 10000
 ORC_STRENGTH = 5
 MAX_ENEMIES = 10
 MAX_ITEMS = 10
-BASE_GAME_URL = "http://localhost:8000/game/play"
-BOARD_CONFIG_FILES = [os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/0.json')]
+RANGE_MARKET_U = [1, 2]
+RANGE_MARKET_P = [2, 4]
+RANGE_MINE = [5, 10]
+BASE_GAME_URL = "http://www.vikingdoom.com/game/play"
+BOARD_CONFIG_FILES = [
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/0.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/1.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/2.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/3.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/4.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/5.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/6.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/7.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/8.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/9.json'), 
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/10.json'),
+    os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/11.json')
+]

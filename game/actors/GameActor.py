@@ -21,7 +21,7 @@ setup()
 
 # Rest of the import statements
 from datetime import timedelta
-from random import choice
+from random import choice, randint
 import ujson
 from math import floor
 from thespian.actors import *
@@ -96,7 +96,25 @@ class GameActor(ActorTypeDispatcher):
                 self._game.map = map
 
             # Initialize the actor's internal state
-            self._init_board_from_str()
+            self._add_walls()
+
+            # Randomly place the dragon, mines, markets, items and enemies
+            self._add_random_mine()
+            self._add_random_markets()
+            self._add_random_enemy()
+            self._add_random_item()
+
+            # Create THE dragon
+            rnd_pos = choice(list(self._empty_tiles))
+            self._empty_tiles.remove(rnd_pos)
+            self._game.map.enemy.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], type='dragon', health=DRAGON_HEALTH, strength=DRAGON_STRENGTH)
+
+            # Save the board and game in database
+            self._game.map.save()
+            self._game.save()
+
+            # Update the string representation of the map
+            self._update_board()
 
             # Save the board and game in database
             self._game.map.save()
@@ -117,7 +135,7 @@ class GameActor(ActorTypeDispatcher):
             user_code = data.get('code')
 
             # Check that we have less than four players and the player is not already part of the game
-            if len(self._players) < 4 and self._game.players.all().filter(user__code__exact=user_code).count() < 1:
+            if self._game.players.all().count() < 4 and self._game.players.all().filter(user__code__exact=user_code).count() < 1:
                 try:
                     # Get the user associated with the code
                     user = User.objects.get(code__exact=user_code)
@@ -157,7 +175,7 @@ class GameActor(ActorTypeDispatcher):
                     self._game.save()
                     commit()
 
-                    if len(self._players) == 4:
+                    if self._game.players.all().count() == 4:
                         # If the game is full send a message both the lookup and supervisor actors
                         lookup = self.createActor('game.actors.LookupActor', globalName=LOOKUP_NAME)
                         supervisor = self.createActor(SupervisorActor, globalName=SUPERVISOR_NAME)
@@ -203,57 +221,61 @@ class GameActor(ActorTypeDispatcher):
             self._ui = self.createActor(UIManagerActor, globalName=UI_MANAGER_NAME)
 
         elif action == 'next_action':
-            # Get the player
-            player_code = data.get('code')
-            if player_code is not None:
-                player = self._game.players.all().get(user__code__exact=player_code)
-                player.action = data.get('action')
+            # Make sure the game is still playing
+            if self._game.state == "P":
+                # Get the player
+                player_code = data.get('code')
+                if player_code is not None:
+                    player = self._game.players.all().get(user__code__exact=player_code)
+                    player.action = data.get('action')
 
-                # Send a debug message to the log
-                self.send(self._logger, format_msg('debug', data="{} - Got a move request from player {}: {}".format(__name__, player_code, player.action)))
-                if player.state == 'D':
-                    # The player is alive again (praised be odin)
-                    player.state = 'P'
+                    # Send a debug message to the log
+                    self.send(self._logger, format_msg('debug', data="{} - Got a move request from player {}: {}".format(__name__, player_code, player.action)))
+                    if player.state == 'D':
+                        # The player is alive again (praised be odin)
+                        player.state = 'P'
+                    else:
+                        # Collect all nearby items
+                        self._collect_items(player)
+
+                        # Try to move around
+                        if not self._move_around(player):
+                            # Buy items if possible
+                            if not self._buy_item(player):
+                                # Attack a mine
+                                if not self._attack_mine(player):
+                                    # Fight a nearby enemy
+                                    if not self._fight_enemy(player):
+                                        # Fight a nearby hero
+                                        self._fight_hero(player)
+                        # Send game state to UIManager if necessary
+                        if self._ui is not None:
+                            self.send(self._ui, self._game)
+
+                        # Update the board
+                        self._update_board()
+                        self._game.map.save()
+
+                    # Save the player
+                    player.save()
+
+                    # Save the game
+                    self._game.save()
+                    commit()
+
+                    # Send serialized game state back to orig
+                    serializer = CustomGameSerializer(self._game, context={'your_hero': player})
+                    self.send(orig, format_msg('ok', data=ujson.dumps(serializer.data)))
+
+                    # Update the player attribute of the PlayerActor
+                    self.send(sender, format_msg('update', data=player.state))
+
+                    # Send the game state to the logging actor
+                    self.send(self._logger, self._game)
                 else:
-                    # Collect all nearby items
-                    self._collect_items(player)
-
-                    # Try to move around
-                    if not self._move_around(player):
-                        # Buy items if possible
-                        if not self._buy_item(player):
-                            # Attack a mine
-                            if not self._attack_mine(player):
-                                # Fight a nearby enemy
-                                if not self._fight_enemy(player):
-                                    # Fight a nearby hero
-                                    self._fight_hero(player)
-                    # Send game state to UIManager if necessary
-                    if self._ui is not None:
-                        self.send(self._ui, self._game)
-
-                    # Update the board
-                    self._update_board()
-                    self._game.map.save()
-
-                # Save the player
-                player.save()
-
-                # Save the game
-                self._game.save()
-                commit()
-
-                # Send serialized game state back to orig
-                serializer = CustomGameSerializer(self._game, context={'your_hero': player})
-                self.send(orig, format_msg('ok', data=ujson.dumps(serializer.data)))
-
-                # Update the player attribute of the PlayerActor
-                self.send(sender, format_msg('update', data=player.state))
-
-                # Send the game state to the logging actor
-                self.send(self._logger, self._game)
+                    self.send(orig, format_msg('error', data='Could not find this player in this game.'))
             else:
-                self.send(orig, format_msg('error', data='Could not find this player in this game.'))
+                self.send(orig, format_msg('error', data='The game has already ended. No more action possible.'))
 
         elif action == 'finish':
             # Save the scores and update the players, board and game states
@@ -383,9 +405,9 @@ class GameActor(ActorTypeDispatcher):
         # Return the initialized board instance
         return Board(str_map=str_map, img_path=img_path)
 
-    def _init_board_from_str(self):
+    def _add_walls(self):
         """
-        Fill in the missing configuration for the board from its string representation.
+        Find where the walls are on the map.
         :return: Nothing.
         """
 
@@ -403,66 +425,10 @@ class GameActor(ActorTypeDispatcher):
             y = idx // (MAP_WIDTH * 2)
             x = floor((idx % (MAP_WIDTH * 2)) / 2)  # The division by 2 is due to the fact that each tile is represented by two characters
 
-            if obj[0] == "$":
-                idx += 1
-                # Create an enemy to protect the mine
-                enemy = board.enemy.create(pos_x=x, pos_y=y, type='orc', protected=True)
-                commit()
-                # Create a mine
-                board.mine.create(pos_x=x, pos_y=y, guardian=enemy)
-                commit()
-                # Add coordinates to the dict
-                self._empty_tiles.remove((x, y))
-            elif obj[0] == "#" and obj[1] == "#":
+            if obj == "##":
                 idx += 1
                 # Add coordinates to walls
                 self._walls.append((x, y))
-                self._empty_tiles.remove((x, y))
-            elif obj[0] == "!":
-                idx += 1
-                if obj[1] == "S":
-                    e_type = 'skeleton'
-                    health = DEFAULT_ENEMY_HEALTH
-                    strength = 1
-                elif obj[1] == "O":
-                    e_type = 'orc'
-                    health = DEFAULT_ENEMY_HEALTH
-                    strength = ORC_STRENGTH
-                else:
-                    e_type = 'dragon'
-                    health = DRAGON_HEALTH
-                    strength = DRAGON_STRENGTH
-                # Create an enemy to protect the mine
-                board.enemy.create(pos_x=x, pos_y=y, type=e_type, health=health, strength=strength)
-                commit()
-                # Add the enemy to the dict
-                self._empty_tiles.remove((x, y))
-            elif obj[0] == "?":
-                idx += 1
-                if obj[1] == "P":
-                    i_type = 'potion'
-                    value = DEFAULT_ITEM_VALUE
-                elif obj[1] == "B":
-                    i_type = 'big_gold'
-                    value = 2 * DEFAULT_ITEM_VALUE
-                else:
-                    i_type = 'gold'
-                    value = DEFAULT_ITEM_VALUE
-                # Create item
-                board.item.create(pos_x=x, pos_y=y, type=i_type, value=value)
-                commit()
-                # Add coordinates to the dict
-                self._empty_tiles.remove((x, y))
-            elif obj[0] == "~":
-                idx += 1
-                if obj[1] == "P":
-                    m_type = 'potion_m'
-                else:
-                    m_type = 'upgrade_m'
-                # Create a market
-                board.market.create(pos_x=x, pos_y=y, type=m_type)
-                commit()
-                # Add the coordinates to the dict
                 self._empty_tiles.remove((x, y))
 
     def _collect_items(self, player):
@@ -899,6 +865,64 @@ class GameActor(ActorTypeDispatcher):
             self._empty_tiles.remove(enemy_pos)
             # Create a new enemy in the database
             self._game.map.enemy.create(pos_x=enemy_pos[0], pos_y=enemy_pos[1], type="skeleton")
+
+    def _add_random_mine(self):
+        """
+        Add a random number of mines on the map at random locations.
+        :return: Nothing
+        """
+
+        # How many mines do we want
+        nb_mines = randint(*RANGE_MINE)
+
+        # Create mine and guardian at a random location
+        cpt = 0
+        while cpt < nb_mines:
+            cpt += 1
+            # Choose a position
+            rnd_pos = choice(list(self._empty_tiles))
+            self._empty_tiles.remove(rnd_pos)
+            # Create an enemy to protect the mine
+            enemy = self._game.map.enemy.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], type='orc', protected=True)
+            commit()
+            # Create a mine
+            self._game.map.mine.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], guardian=enemy)
+            commit()
+
+    def _add_random_markets(self):
+        """
+        Add a random number of upgrade and potion markets to the map at random locations.
+        :return: Nothing.
+        """
+
+        # How many upgrade markets
+        nb_mkt = randint(*RANGE_MARKET_U)
+
+        # Create the upgrade markets
+        cpt = 0
+        while cpt < nb_mkt:
+            cpt += 1
+
+            # Choose a position
+            rnd_pos = choice(list(self._empty_tiles))
+            self._empty_tiles.remove(rnd_pos)
+            # Create a market
+            self._game.map.market.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], type='upgrade_m')
+            commit()
+
+        # How many potion markets
+        nb_mkt = randint(*RANGE_MARKET_P)
+        cpt = 0
+        while cpt < nb_mkt:
+            cpt += 1
+
+            # Choose a position
+            rnd_pos = choice(list(self._empty_tiles))
+            self._empty_tiles.remove(rnd_pos)
+            # Create a market
+            self._game.map.market.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], type='potion_m')
+            commit()
+
 
     def _update_board(self):
         """

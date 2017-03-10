@@ -87,9 +87,5 @@ class LoggingActor(ActorTypeDispatcher):
             self._error.error(data)
         elif action == 'exception':
             self._error.exception(data)
-            send_mail(subject="Exception occurred in actor system", message=message,
-                      from_email="actor_system@vikingdoom.com", recipient_list=[Vikingdoom.settings.ADMINS[0][0]])
         elif action == 'fatal':
             self._error.fatal(data)
-            send_mail(subject="Fatal error occurred in actor system", message=message,
-                      from_email="actor_system@vikingdoom.com", recipient_list=[Vikingdoom.settings.ADMINS[0][0]])
