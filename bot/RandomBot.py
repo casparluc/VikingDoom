@@ -45,7 +45,7 @@ class RandomBot:
 
         # Send a simple put request to the server and retrieve the result
         try:
-            result = self._session.put("http://vikingdoom.com/game/new/{}/".format(self._player_code), timeout=30)
+            result = self._session.put("http://localhost:8000/game/new/{}/".format(self._player_code), timeout=30)
         except requests.ConnectTimeout as e:
             # Write an error message to the logs
             self._logger.exception("Connection timeout: {}".format(e))
