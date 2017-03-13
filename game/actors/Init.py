@@ -34,6 +34,9 @@ from signal import SIGINT, SIGTERM
 
 # Keep track of the client connected to the websocket server
 REGISTERED_WS_CLT = set()
+WS_SERVER = None
+ASYNC_LOOP = None
+ACTOR_SYSTEM = None
 
 
 # Declare function necessary for handling request on the websocket server and shutting down both the server and actor system
@@ -102,25 +105,31 @@ def handler(ws, path):
                 # Remove the client if the connection was lost
                 unregister(sock)
 
-# Initialize the ActorSystem
-ACTOR_SYSTEM = ActorSystem("multiprocTCPBase", logDefs=Vikingdoom.settings.LOGGING)
 
-# Initialize the named Supervisor, Lookup, Logging and UIManager actors
-ACTOR_SYSTEM.createActor(SupervisorActor, globalName=SUPERVISOR_NAME)
-lookup = ACTOR_SYSTEM.createActor(LookupActor, globalName=LOOKUP_NAME)
-ACTOR_SYSTEM.tell(lookup, format_msg('init'))
-ACTOR_SYSTEM.createActor(PlayerLookupActor, globalName=PLAYER_LOOKUP_NAME)
-ACTOR_SYSTEM.createActor(LoggingActor, globalName=LOGGING_NAME)
-ACTOR_SYSTEM.createActor(UIManagerActor, globalName=UI_MANAGER_NAME)
+def main():
+    global WS_SERVER, ASYNC_LOOP, ACTOR_SYSTEM
+    # Initialize the ActorSystem
+    ACTOR_SYSTEM = ActorSystem("multiprocTCPBase", logDefs=Vikingdoom.settings.LOGGING)
 
-# Declare the websocket server
-start_srv = websockets.serve(handler, WS_SERVER_HOST, WS_SERVER_PORT)
-ASYNC_LOOP = asyncio.get_event_loop()
-WS_SERVER = ASYNC_LOOP.run_until_complete(start_srv)
+    # Initialize the named Supervisor, Lookup, Logging and UIManager actors
+    ACTOR_SYSTEM.createActor(SupervisorActor, globalName=SUPERVISOR_NAME)
+    lookup = ACTOR_SYSTEM.createActor(LookupActor, globalName=LOOKUP_NAME)
+    ACTOR_SYSTEM.tell(lookup, format_msg('init'))
+    ACTOR_SYSTEM.createActor(PlayerLookupActor, globalName=PLAYER_LOOKUP_NAME)
+    ACTOR_SYSTEM.createActor(LoggingActor, globalName=LOGGING_NAME)
+    ACTOR_SYSTEM.createActor(UIManagerActor, globalName=UI_MANAGER_NAME)
 
-# Add a signal handler to gracefully shutdown the system from the command line
-ASYNC_LOOP.add_signal_handler(SIGINT, stop)
-ASYNC_LOOP.add_signal_handler(SIGTERM, stop)
+    # Declare the websocket server
+    start_srv = websockets.serve(handler, WS_SERVER_HOST, WS_SERVER_PORT)
+    ASYNC_LOOP = asyncio.get_event_loop()
+    WS_SERVER = ASYNC_LOOP.run_until_complete(start_srv)
 
-# Let the websocket server run until the ragnarok
-ASYNC_LOOP.run_forever()
+    # Add a signal handler to gracefully shutdown the system from the command line
+    ASYNC_LOOP.add_signal_handler(SIGINT, stop)
+    ASYNC_LOOP.add_signal_handler(SIGTERM, stop)
+
+    # Let the websocket server run until the ragnarok
+    ASYNC_LOOP.run_forever()
+
+if __name__ == "__main__":
+    main()
