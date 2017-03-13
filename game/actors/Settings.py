@@ -30,7 +30,7 @@ PLAYER_LOOKUP_NAME = "PlayerLookup"
 
 MAX_GAMES = 2
 
-WS_SERVER_HOST = 'www.vikingdoom.com'
+WS_SERVER_HOST = 'localhost'
 WS_SERVER_PORT = 8765
 WS_URL = "ws://{}:{}/produce".format(WS_SERVER_HOST, WS_SERVER_PORT)
 
@@ -47,7 +47,7 @@ MAX_ITEMS = 10
 RANGE_MARKET_U = [1, 2]
 RANGE_MARKET_P = [2, 4]
 RANGE_MINE = [5, 10]
-BASE_GAME_URL = "http://www.vikingdoom.com/game/play"
+BASE_GAME_URL = "http://localhost:8000/game/play"
 BOARD_CONFIG_FILES = [
     os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/0.json'), 
     os.path.join(Vikingdoom.settings.BASE_DIR, 'game/maps/json/1.json'), 
