@@ -296,45 +296,46 @@ class GameActor(ActorTypeDispatcher):
         :return: Nothing.
         """
 
-        # Increase the number of turns played
-        self._game.turn += 1
-        self.send(self._logger, format_msg('debug', data="{} - Executing turn {} with {} players.".format(__name__, self._game.turn, len(self._players))))
+        if self._game.state == "P":
+            # Increase the number of turns played
+            self._game.turn += 1
+            self.send(self._logger, format_msg('debug', data="{} - Executing turn {} with {} players.".format(__name__, self._game.turn, len(self._players))))
 
-        # Update players gold from mines
-        for player in self._game.players.all().iterator():
-            self._update_gold_from_mines(player)
-            player.save()
+            # Update players gold from mines
+            for player in self._game.players.all().iterator():
+                self._update_gold_from_mines(player)
+                player.save()
 
-        # Move skeletons around
-        self._move_skeletons()
+            # Move skeletons around
+            self._move_skeletons()
 
-        # Move the upgrade markets around
-        self._move_upgrade_market()
+            # Move the upgrade markets around
+            self._move_upgrade_market()
 
-        # Add items to the map
-        self._add_random_item()
+            # Add items to the map
+            self._add_random_item()
 
-        # Add skeletons to the map
-        self._add_random_enemy()
+            # Add skeletons to the map
+            self._add_random_enemy()
 
-        # Update the board
-        self._update_board()
+            # Update the board
+            self._update_board()
 
-        # Save the game and board
-        self._game.map.save()
-        self._game.save()
-        commit()
+            # Save the game and board
+            self._game.map.save()
+            self._game.save()
+            commit()
 
-        # If the maximum number of turns has been reached, end the game
-        if self._game.turn >= MAX_TURN:
-            self.send(self.myAddress, format_msg('finish'))
+            # If the maximum number of turns has been reached, end the game
+            if self._game.turn >= MAX_TURN:
+                self.send(self.myAddress, format_msg('finish'))
 
-        # Send game state to UIManager if available
-        if self._ui is not None:
-            self.send(self._ui, self._game)
+            # Send game state to UIManager if available
+            if self._ui is not None:
+                self.send(self._ui, self._game)
 
-        # Send the game state to the logging actor
-        self.send(self._logger, self._game)
+            # Send the game state to the logging actor
+            self.send(self._logger, self._game)
 
         # Ask to be woken up in a second
         self.wakeupAfter(timePeriod=timedelta(seconds=1))
@@ -446,13 +447,12 @@ class GameActor(ActorTypeDispatcher):
             # Just collect them and increase the player's stats in consequence
             for item in items:
                 if item.type == 'potion':
-                    if player.health < DEFAULT_PLAYER_HEALTH:
-                        # Increase the player's health
-                        player.health = min(player.health + item.value, DEFAULT_PLAYER_HEALTH)
-                        player.last_action = 'D'
+                    # Increase the player's health
+                    player.health = min(player.health + item.value, DEFAULT_PLAYER_HEALTH)
+                    player.last_action = 'D'
 
-                        # Remove the object from the database
-                        self._remove_item(item)
+                    # Remove the object from the database
+                    self._remove_item(item)
                 else:
                     # Increase the player's gold
                     player.gold += item.value
@@ -923,7 +923,6 @@ class GameActor(ActorTypeDispatcher):
             self._game.map.market.create(pos_x=rnd_pos[0], pos_y=rnd_pos[1], type='potion_m')
             commit()
 
-
     def _update_board(self):
         """
         Update the string representation of the board.
@@ -1084,10 +1083,10 @@ class GameActor(ActorTypeDispatcher):
                 commit()
 
                 # State
-                player.state = "F"
+                player.state = "T"
                 player.action = ''
                 # Update the database object
-                if self._players.get(player.user.code) is not None:
+                if self._players.get(player.user.code, None) is not None:
                     self.send(self._players.get(player.user.code), format_msg('update', data=player.state))
                 # Save the player in database
                 player.save()

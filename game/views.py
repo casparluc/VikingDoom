@@ -8,8 +8,6 @@ from django.shortcuts import render
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Sum
-from django.conf import settings
-import os
 from string import ascii_uppercase, digits
 from random import SystemRandom
 from math import floor
@@ -123,19 +121,29 @@ class DungeonMasterView(APIView):
         # Ask for the ActorAddress of a game the user is not subscribed to
         data = None
         subscribed = []
-        game_addr = None
         lookup = self._asys.createActor(LookupActor, globalName=LOOKUP_NAME)
 
         while data is None:
+            # Initialize both game_addr and data
+            game_addr = None
             while game_addr is None or not isinstance(game_addr, ActorAddress):
                 with self._asys.private() as thrd_asys:
-                    game_addr = thrd_asys.ask(lookup, format_msg('addr', data={'subscribed': subscribed}))
+                    game_addr = thrd_asys.ask(lookup, format_msg('addr', data={'subscribed': subscribed}), 5)
 
+                # Let the server breath a little bit
+                if game_addr is None:
+                    sleep(2)
+
+            # Save the game address in case the code loops
             subscribed.append(game_addr)
 
             # Ask the game to create a new player for us
             with self._asys.private() as thrd_asys:
-                data = thrd_asys.ask(game_addr, format_msg('add_player', data={'code': player_code}))
+                data = thrd_asys.ask(game_addr, format_msg('add_player', data={'code': player_code}), 5)
+
+            # Let the server breath a little
+            if data is None:
+                sleep(2)
 
         # Extract all information from the response
         game_state = data.get('game_state')
@@ -152,7 +160,6 @@ class DungeonMasterView(APIView):
         :return: Json/xml object containing the details of the Game the user is playing.
         """
 
-        log = logging.getLogger("Game.Views")
         # Extract all required information
         player_action = request.data['action']
         player_code = request.data['code']
@@ -162,16 +169,14 @@ class DungeonMasterView(APIView):
             return Response(data="User does not exist in the database.", status=status.HTTP_404_NOT_FOUND)
 
         # Ask for the address of the player actor
-        log.debug("{} - Create the player lookup actor".format(player_code))
         lookup = self._asys.createActor(PlayerLookupActor, globalName=PLAYER_LOOKUP_NAME)
 
         # Get the player's address
-        log.debug("{} - Ask for the player's address".format(player_code))
         cpt = 0
         player_addr = None
-        while cpt < 5 and player_addr is None and not isinstance(player_addr, ActorAddress):
+        while cpt < 3 and player_addr is None and not isinstance(player_addr, ActorAddress):
             with self._asys.private() as thrd_asys:
-                player_addr = thrd_asys.ask(lookup, format_msg('look', data={'game_code': game_code, 'user_code': player_code}))
+                player_addr = thrd_asys.ask(lookup, format_msg('look', data={'game_code': game_code, 'user_code': player_code}), 3)  # Timeout of 3 seconds
             # Only sleep if we did not get the address
             if player_addr is None:
                 sleep(2)
@@ -182,9 +187,8 @@ class DungeonMasterView(APIView):
             return Response(data="An error occurred while looking for your player.", status=status.HTTP_404_NOT_FOUND)
 
         # Ask the PlayerActor for the next action
-        log.debug("{} - Ask for the game to consider the next_action.".format(player_code))
         with self._asys.private() as thrd_asys:
-            res = thrd_asys.ask(player_addr, format_msg('next_action', data={'action': player_action, 'code': player_code}))
+            res = thrd_asys.ask(player_addr, format_msg('next_action', data={'action': player_action, 'code': player_code}), 3)  # Timeout of 3 seconds
 
         if res is None:  # The player was terminated or the game is finished
             # If the game is finished send back a 503 status
