@@ -5,7 +5,6 @@ import requests
 import logging
 from time import sleep
 from datetime import date
-import ujson
 
 
 class RandomBot:
@@ -45,7 +44,7 @@ class RandomBot:
 
         # Send a simple put request to the server and retrieve the result
         try:
-            result = self._session.put("http://localhost:8000/game/new/{}/".format(self._player_code), timeout=30)
+            result = self._session.put("http://localhost:8000/game/new/{}/".format(self._player_code), timeout=60)
         except requests.ConnectTimeout as e:
             # Write an error message to the logs
             self._logger.exception("Connection timeout: {}".format(e))
@@ -59,7 +58,8 @@ class RandomBot:
 
         # Check the response status.
         # If no exception occurred process the data sent back by the server
-        json_data = ujson.loads(result.json())
+        print(result.json())
+        json_data = result.json()
         self._logger.debug("Game request successful: {}, {}".format(json_data, type(json_data)))
         self._game_state = json_data['state']
         self._player_state = json_data['your_hero']['state']
@@ -85,7 +85,7 @@ class RandomBot:
 
             # Send the request
             try:
-                r = self._session.post(url=url, data=payload, timeout=30)
+                r = self._session.post(url=url, data=payload, timeout=60)
             except requests.ConnectTimeout as e:
                 # Write an error message to the logs
                 self._logger.exception("Connection timeout: {}".format(e))
@@ -96,7 +96,7 @@ class RandomBot:
                 self._logger.exception("The server took too long to answer our request: {}".format(e))
                 # And exit the bot
                 exit(2)
-            except requests.ConnectionError as e:
+            except requests.Timeout as e:
                 # Write an error message to the logs
                 self._logger.exception("An error occurred while connecting to the server: {}".format(e))
                 # And exit the bot
@@ -112,7 +112,8 @@ class RandomBot:
             # Write the response in the logs
             self._logger.debug("Action successfully sent: {}".format(r.json()))
             # Check if the player has been terminated
-            json_data = ujson.loads(r.json())
+            print(r.json())
+            json_data = r.json()
             self._game_state = json_data['state']
             hero = json_data['your_hero']
             self._player_state = hero['state']
@@ -138,7 +139,7 @@ class RandomBot:
                 self._play(url)
 
                 # Sleep for a little while to make debugging easy
-                sleep(randint(5, 15))
+                sleep(randint(10, 30))
         except KeyboardInterrupt:
             exit(0)
 

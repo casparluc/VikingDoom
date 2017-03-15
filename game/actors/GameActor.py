@@ -194,7 +194,7 @@ class GameActor(ActorTypeDispatcher):
 
                     # Send player address, game code and serialized game state back to sender
                     serializer = CustomGameSerializer(self._game, context={'your_hero': player})
-                    self.send(sender, {'game_state': ujson.dumps(serializer.data)})
+                    self.send(sender, {'game_state': serializer.data})
                 except ObjectDoesNotExist:
                     # TODO: Send log message for the exception
                     self.send(sender, None)
@@ -265,7 +265,7 @@ class GameActor(ActorTypeDispatcher):
 
                     # Send serialized game state back to orig
                     serializer = CustomGameSerializer(self._game, context={'your_hero': player})
-                    self.send(orig, format_msg('ok', data=ujson.dumps(serializer.data)))
+                    self.send(orig, format_msg('ok', data=serializer.data))
 
                     # Update the player attribute of the PlayerActor
                     self.send(sender, format_msg('update', data=player.state))
