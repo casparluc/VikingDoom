@@ -59,6 +59,7 @@ class GameActor(ActorTypeDispatcher):
         self._walls = []
         self._empty_tiles = set([(x, y) for x in range(0, MAP_WIDTH) for y in range(0, MAP_HEIGHT)])
         self._available_colors = {'red', 'green', 'blue', 'brown'}
+        self._available_heroes = {1, 2, 3, 4}
 
     def receiveMsg_dict(self, message, sender):
         """
@@ -142,7 +143,18 @@ class GameActor(ActorTypeDispatcher):
                     # Add a new player associated with the use to the game
                     spawn_pos = choice(list(self._empty_tiles))
                     # Get the id of the corresponding hero
-                    hero_id = self._game.players.all().count() + 1
+                    try:
+                        hero_id = self._available_heroes.pop()
+                    except KeyError:
+                        # There has been a mistake here
+                        self.send(self._logger, format_msg('exception', data="{} -- We have ran out of heroes, but are "
+                                                                             "still adding players to the game.".format(__name__)))
+                        # Send back an error
+                        self.send(sender, None)
+                        # Terminate the actor
+                        self.send(self.myAddress, ActorExitRequest())
+                        return
+
                     # Choose the player's color
                     try:
                         color = self._available_colors.pop()
@@ -150,7 +162,10 @@ class GameActor(ActorTypeDispatcher):
                         # There has been a mistake here
                         self.send(self._logger, format_msg('exception', data="{} -- We have ran out of colors, but are "
                                                                              "still adding players to the game.".format(__name__)))
+                        # Send back an error
                         self.send(sender, None)
+                        # Terminate the actor
+                        self.send(self.myAddress, ActorExitRequest())
                         return
                     player = self._game.players.create(user=user,
                                                        color=color,
@@ -209,7 +224,9 @@ class GameActor(ActorTypeDispatcher):
             for player in self._game.players.all().iterator():
                 player.state = "P"
                 player.save()
-                self.send(self._players[player.user.code], format_msg('update', data=player.state))
+                # If the player is still part of the game
+                if player.user.code in self._players:
+                    self.send(self._players[player.user.code], format_msg('update', data=player.state))
             # Set the state of the game
             self._game.state = "P"
             # Save the initial state of the game
@@ -229,8 +246,7 @@ class GameActor(ActorTypeDispatcher):
                     player = self._game.players.all().get(user__code__exact=player_code)
                     player.action = data.get('action')
 
-                    # Send a debug message to the log
-                    self.send(self._logger, format_msg('debug', data="{} - Got a move request from player {}: {}".format(__name__, player_code, player.action)))
+                    # Check if the player died since last time
                     if player.state == 'D':
                         # The player is alive again (praised be odin)
                         player.state = 'P'
@@ -358,13 +374,14 @@ class GameActor(ActorTypeDispatcher):
 
                 # Mark the player as terminated
                 player = self._game.players.all().get(user__code__exact=player_code)
+                self._empty_tiles.add((player.pos_x, player.pos_y))
                 player.state = 'T'
                 player.pos_x = -1
                 player.pos_y = -1
                 player.save()
                 commit()
 
-                # Remove the player from the second lookup table
+                # Remove the player from the lookup table
                 try:
                     self._players.pop(player_code)
                 except KeyError:
@@ -372,6 +389,15 @@ class GameActor(ActorTypeDispatcher):
                                                                          " {} in players {}.".format(__name__,
                                                                                                      player_code,
                                                                                                      self._players)))
+
+                # If the game is still in its initialization state
+                if self._game.state == "I":
+                    # Make the color available
+                    self._available_colors.add(player.color)
+                    # Make the hero available
+                    self._available_heroes.add(player.hero_id)
+                    # Remove the player from the list of players
+                    self._game.players.all().filter(user__code__exact=player_code).delete()
 
                 self.send(self._logger, format_msg('debug', data="{} - Player {} exited".format(__name__, player_code)))
                 break
