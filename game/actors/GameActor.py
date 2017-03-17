@@ -500,14 +500,14 @@ class GameActor(ActorTypeDispatcher):
         if len(markets) != 0 and player.gold >= DEFAULT_MARKET_PRICE:
             # Buy an item wherever possible
             for market in markets:
-                if market.type == 'potion_m' and player.health < DEFAULT_PLAYER_HEALTH:
+                if market.type == 'potion_m' and player.health <= DEFAULT_PLAYER_HEALTH:
                     player.health = min(POTION_MARKET_VALUE + player.health, DEFAULT_PLAYER_HEALTH)
                     player.gold -= market.price
                     player.last_action = 'D'
                     player.action = 'B'
                     return True
 
-                if market.type == 'upgrade_m' and player.strength < MAX_PLAYER_STRENGTH:
+                if market.type == 'upgrade_m' and player.strength <= MAX_PLAYER_STRENGTH:
                     player.strength = min(player.strength + 5, MAX_PLAYER_STRENGTH)
                     player.gold -= market.price
                     player.last_action = 'B'
@@ -737,6 +737,8 @@ class GameActor(ActorTypeDispatcher):
             # Disown the player from all his mines
             for mine in self._game.map.mine.all().filter(owner__exact=player).iterator():
                 mine.owner = None
+                mine.save()
+                commit()
 
             # Respawn the player in his initial position
             self._empty_tiles.add((player.pos_x, player.pos_y))
