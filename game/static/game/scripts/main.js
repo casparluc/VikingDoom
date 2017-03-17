@@ -1,4 +1,5 @@
 // Declare some global variables
+var base_url = "http://localhost:8000/game";
 var ws_url = "ws://localhost:8765/consume";
 var fps = 30;
 var base_path = '../static/game/images';
@@ -326,13 +327,26 @@ var Game = Backbone.Model.extend({
          } else {
             loading_sprite.visible = true;
             mask_sprite.visible = true;
-            for (idx in player_sprites) {
-               delete player_sprites[idx];
-            }
+            remove_sprites();
          }
       }, this);
    }
 });
+
+function remove_sprites() {
+	// Remove the players' sprites
+	for (idx in player_sprites) {
+		var s = player_sprites[idx];
+		delete s;
+		delete player_sprites[idx];
+	}
+	// Remove the items and enemies' sprites
+	for(idx in itms_sprites){
+		var s = itms_sprites[idx];
+		delete s;
+		delete itms_sprites[idx];
+	}
+}
 
 //////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////// 
@@ -486,8 +500,12 @@ function preload() {
 		
 		// Declare the error handler
 		socket.onerror = function(error) {
+			// Remove all sprites from the map
+			remove_sprites();
 			// Hide the loading sprite
 			loading_sprite.visible = false;
+			// Display the masking sprite
+			mask_sprite.visible = true;
 			// Display the dead sprite
 			dead_sprite.visible = true;
 		};
@@ -497,8 +515,12 @@ function preload() {
 		
 		// Declare handler for the close event
 		socket.onclose = function() {
+			// Remove all sprites from the map
+			remove_sprites();
 			// Hide the loading sprite
 			loading_sprite.visible = false;
+			// Display the masking sprite
+			mask_sprite.visible = true;
 			// Display the dead sprite
 			dead_sprite.visible = true;
 		};
