@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import Sum
+from django.utils.datastructures import MultiValueDictKeyError
 from string import ascii_uppercase, digits
 from random import SystemRandom
 from math import floor
@@ -161,8 +162,11 @@ class DungeonMasterView(APIView):
         """
 
         # Extract all required information
-        player_action = request.data['action']
-        player_code = request.data['code']
+        try:
+            player_action = request.POST['action']
+            player_code = request.POST['code']
+        except MultiValueDictKeyError:
+            return Response(data="An error occurred while trying to parse your request.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Make sure the user exist in database
         if not User.objects.filter(code__exact=player_code).exists():
