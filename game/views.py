@@ -163,6 +163,7 @@ class DungeonMasterView(APIView):
 
         # Extract all required information
         try:
+            # TODO: Bring back the 'request.data' from django-request
             player_action = request.POST['action']
             player_code = request.POST['code']
         except MultiValueDictKeyError:
