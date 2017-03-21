@@ -57,16 +57,6 @@ Installing all of the required and even the optional modules is quite easy, sinc
    $> pip3 install requests
    $> pip3 install mysqlclient
    ```
-   
-**Note:** Due to an error in the feature introduced by thespian version 3.7, the library has been rolled back to its 3.6.3 version. Thus, until 3.7.0 is re-established as the stable release, you will have to install `Thespian` by hand.
-This adds the following steps:
-  ```
-   $> git clone https://github.com/godaddy/Thespian.git
-   $> cd Thespian
-   $> git checkout add_system_private
-   $> python3 setup.py install
-   ```
-Sorry for any inconvenience.
 
 Next, you will have to install and configure a database for use in Django. If you decided to go with MySQL, installing the basic database on Linux can be done through the distribution's package manager:
 
