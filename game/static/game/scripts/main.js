@@ -1,5 +1,4 @@
 // Declare some global variables
-var base_url = "http://localhost:8000/game";
 var ws_url = "ws://localhost:8765/consume";
 var fps = 30;
 var base_path = '../static/game/images';
@@ -49,18 +48,23 @@ var Enemy = Backbone.Model.extend({
       this.on('change:action', function(m, o) {
 			// Check if the action field has changed
 			var sprite = itms_sprites[m.get('type') + '_' + m.get('id')];
-			if(m.get('action') == "F") {
-				sprite.changeAnimation("fight");
-			} else {
-				sprite.changeImage("default");
-			}
+                        if(m.get('type') != "dragon") {
+			   if(m.get('action') == "F") {
+			      sprite.changeAnimation("fight");
+			    } else {
+			      sprite.changeImage("default");
+			   }
+                        }
       }, this);
       
       // Remove event handler
       this.on('remove', function(m, c, o) {
          // Simply delete the corresponding sprite
-         itms_sprites[m.get('type') + '_' + m.get('id')].remove();
-         delete itms_sprites[m.get('type') + '_' + m.get('id')];
+         var idx = m.get('type') + '_' + m.get('id');
+         if(idx in itms_sprites) {
+            itms_sprites[idx].remove();
+            delete itms_sprites[idx];
+         }
       }, this);
    }
 });
@@ -92,8 +96,11 @@ var Item = Backbone.Model.extend({
       // Remove event handler
       this.on('remove', function(m, c, o) {
          // Simply delete the corresponding sprite
-         itms_sprites[m.get('type') + '_' + m.get('id')].remove();
-         delete itms_sprites[m.get('type') + '_' + m.get('id')];
+         var idx = m.get('type') + '_' + m.get('id');
+         if(idx in itms_sprites) {
+            itms_sprites[idx].remove();
+            delete itms_sprites[idx];
+         }
       }, this);
    }
 });
@@ -126,7 +133,7 @@ var Player = Backbone.Model.extend({
 			s.addAnimation("walk", anim.walk);
 			s.addAnimation("fight", anim.fight);
 			s.addAnimation("drink", anim.drink);
-			s.addAnimation("bow", anim.drink);
+			s.addAnimation("bow", anim.bow);
 			s.animation.framedelay = 1;
 			s.addImage('idle', anim.idle);
 			s.changeImage('idle');
@@ -269,8 +276,11 @@ var Market = Backbone.Model.extend({
       // Remove event handler
       this.on('remove', function(m, c, o) {
          // Simply delete the corresponding sprite
-         itms_sprites[m.get('type') + '_' + m.get('id')].remove();
-         delete itms_sprites[m.get('type') + '_' + m.get('id')];
+         var idx = m.get('type') + '_' + m.get('id');
+         if(idx in itms_sprites) {
+            itms_sprites[idx].remove();
+            delete itms_sprites[idx];
+         }
       }, this);
    }
 });
@@ -327,26 +337,10 @@ var Game = Backbone.Model.extend({
          } else {
             loading_sprite.visible = true;
             mask_sprite.visible = true;
-            remove_sprites();
          }
       }, this);
    }
 });
-
-function remove_sprites() {
-	// Remove the players' sprites
-	for (idx in player_sprites) {
-		var s = player_sprites[idx];
-		delete s;
-		delete player_sprites[idx];
-	}
-	// Remove the items and enemies' sprites
-	for(idx in itms_sprites){
-		var s = itms_sprites[idx];
-		delete s;
-		delete itms_sprites[idx];
-	}
-}
 
 //////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////// 
@@ -417,6 +411,11 @@ function on_message_callback(event) {
 	
 	// Set the game model
 	game.set({'id': game_data.id, 'code': game_data.code, 'state': game_data.state, 'turn': game_data.turn, 'url': game_data.url});
+
+   // If the game is not playing anymore, simply remove all sprites
+   if(game_data.state != "P") {
+      remove_sprites();
+   }
 	
 	// Set the players collection
 	players.set(game_data.players);
@@ -433,6 +432,24 @@ function on_message_callback(event) {
 	markets.set(map.market);
 	// Set the mines collection
 	mines.set(map.mine);
+}
+
+function remove_sprites() {
+	// Remove the players' sprites
+	for (idx in player_sprites) {
+		var s = player_sprites[idx];
+      s.visible = false;
+      s.remove();
+		delete player_sprites[idx];
+	}
+
+	// Remove the items and enemies' sprites
+	for (idx in itms_sprites) {
+		var s = itms_sprites[idx];
+      s.visible = false;
+      s.remove();
+		delete itms_sprites[idx];
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
