@@ -17,15 +17,12 @@ setup()
 
 # Rest of the import statements
 from thespian.actors import *
-from thespian.troupe import troupe
 from game.actors.utils import extract_msg
-from game.serializers import  CustomGameSerializer
-from django.core.mail import send_mail
+from game.serializers import CustomGameSerializer
 import logging
 import ujson
 
 
-@troupe(idle_count=2)  # Define a troupe of actors with a minimum size of 2 and a maximum of 10
 class LoggingActor(ActorTypeDispatcher):
     """
     Declare an actor which sole purpose is to dispatch log messages to the appropriate file and extract information

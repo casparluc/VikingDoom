@@ -147,8 +147,11 @@ class GameActor(ActorTypeDispatcher):
                         hero_id = self._available_heroes.pop()
                     except KeyError:
                         # There has been a mistake here
-                        self.send(self._logger, format_msg('exception', data="{} -- We have ran out of heroes, but are "
-                                                                             "still adding players to the game.".format(__name__)))
+                        self.send(self._logger, format_msg('error', data="{} -- We have ran out of heroes, but are "
+                                                                         "still adding players to the game.".format(__name__)))
+
+                        # Terminate the game
+                        self._finish(terminate=True)
                         # Send back an error
                         self.send(sender, None)
                         # Terminate the actor
@@ -160,8 +163,10 @@ class GameActor(ActorTypeDispatcher):
                         color = self._available_colors.pop()
                     except KeyError:
                         # There has been a mistake here
-                        self.send(self._logger, format_msg('exception', data="{} -- We have ran out of colors, but are "
-                                                                             "still adding players to the game.".format(__name__)))
+                        self.send(self._logger, format_msg('error', data="{} -- We have ran out of colors, but are "
+                                                                         "still adding players to the game.".format(__name__)))
+                        # Terminate the game
+                        self._finish(terminate=True)
                         # Send back an error
                         self.send(sender, None)
                         # Terminate the actor
@@ -178,6 +183,12 @@ class GameActor(ActorTypeDispatcher):
                     try:
                         self._empty_tiles.remove(spawn_pos)
                     except KeyError:
+                        # Terminate the game
+                        self._finish(terminate=True)
+                        # Send back an error
+                        self.send(sender, None)
+                        # Terminate the actor
+                        self.send(self.myAddress, ActorExitRequest())
                         pass
 
                     # Create a child actor for the player
@@ -211,7 +222,8 @@ class GameActor(ActorTypeDispatcher):
                     serializer = CustomGameSerializer(self._game, context={'your_hero': player})
                     self.send(sender, {'game_state': serializer.data})
                 except ObjectDoesNotExist:
-                    # TODO: Send log message for the exception
+                    self.send(self._logger, format_msg('error', data="{} -- Could not find"
+                                                                     " user {}.".format(__name__, user_code)))
                     self.send(sender, None)
             else:
                 self.send(sender, None)
@@ -385,10 +397,10 @@ class GameActor(ActorTypeDispatcher):
                 try:
                     self._players.pop(player_code)
                 except KeyError:
-                    self.send(self._logger, format_msg('exception', data="{} -- Could not find player"
-                                                                         " {} in players {}.".format(__name__,
-                                                                                                     player_code,
-                                                                                                     self._players)))
+                    self.send(self._logger, format_msg('error', data="{} -- Could not find player"
+                                                                     " {} in players {}.".format(__name__,
+                                                                                                 player_code,
+                                                                                                 self._players)))
 
                 # If the game is still in its initialization state
                 if self._game.state == "I":
@@ -398,6 +410,8 @@ class GameActor(ActorTypeDispatcher):
                     self._available_heroes.add(player.hero_id)
                     # Remove the player from the list of players
                     self._game.players.all().filter(user__code__exact=player_code).delete()
+                    # Save the game object
+                    self._game.save()
 
                 self.send(self._logger, format_msg('debug', data="{} - Player {} exited".format(__name__, player_code)))
                 break
@@ -407,8 +421,14 @@ class GameActor(ActorTypeDispatcher):
             self.send(self._ui, self._game)
 
         # Check if the game was playing and there is at least one remaining player
-        if self._game.state == "P" and len(self._players) <= 0:
-            self.send(self.myAddress, format_msg('finish'))
+        if len(self._players) <= 0:
+            if self._game.state == "P":
+                self.send(self.myAddress, format_msg('finish'))
+            else:
+                # Terminate the game
+                self._finish(terminate=True)
+                # Terminate the actor
+                self.send(self.myAddress, ActorExitRequest())
 
     def _get_board_from_file(self):
         """
@@ -500,14 +520,14 @@ class GameActor(ActorTypeDispatcher):
         if len(markets) != 0 and player.gold >= DEFAULT_MARKET_PRICE:
             # Buy an item wherever possible
             for market in markets:
-                if market.type == 'potion_m' and player.health <= DEFAULT_PLAYER_HEALTH:
+                if market.type == 'potion_m' and player.health < DEFAULT_PLAYER_HEALTH:
                     player.health = min(POTION_MARKET_VALUE + player.health, DEFAULT_PLAYER_HEALTH)
                     player.gold -= market.price
                     player.last_action = 'D'
                     player.action = 'B'
                     return True
 
-                if market.type == 'upgrade_m' and player.strength <= MAX_PLAYER_STRENGTH:
+                if market.type == 'upgrade_m' and player.strength < MAX_PLAYER_STRENGTH:
                     player.strength = min(player.strength + 5, MAX_PLAYER_STRENGTH)
                     player.gold -= market.price
                     player.last_action = 'B'
@@ -1089,10 +1109,11 @@ class GameActor(ActorTypeDispatcher):
         # Free its tile
         self._empty_tiles.add((market.pos_x, market.pos_y))
 
-    def _finish(self):
+    def _finish(self, terminate=False):
         """
         Reset the state of the players and record the players' score.
         This function is called at the end of each game in the main loop.
+        :param terminate: Boolean value indicating if the game is being terminated or gracefully exiting.
         :return: Nothing.
         """
 
@@ -1105,10 +1126,11 @@ class GameActor(ActorTypeDispatcher):
 
             # For each player
             for player in self._game.players.all().iterator():
-                # Record the score
-                score = Score(game=self._game, user=player.user, score=player.gold)
-                score.save()
-                commit()
+                if not terminate:
+                    # Record the score
+                    score = Score(game=self._game, user=player.user, score=player.gold)
+                    score.save()
+                    commit()
 
                 # State
                 player.state = "T"

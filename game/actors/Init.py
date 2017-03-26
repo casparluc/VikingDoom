@@ -70,8 +70,7 @@ def stop():
     ACTOR_SYSTEM.shutdown()
 
 
-@asyncio.coroutine
-def handler(ws, path):
+async def handler(ws, path):
     """
     Handler function for request arriving at the websocket server.
     :param ws: A websocket instance.
@@ -86,21 +85,21 @@ def handler(ws, path):
         REGISTERED_WS_CLT.add(ws)
         # And simply keep the connection alive
         while True:
-            yield from asyncio.sleep(5)  # Keep alive ping is sent only every 5 seconds
+            await asyncio.sleep(5)  # Keep alive ping is sent only every 5 seconds
             try:
                 # Ping the client
-                yield from ws.ping()
+                await ws.ping()
             except ConnectionClosed:
                 # And unregister in case it quit or the connection was somehow lost
                 unregister(ws)
 
     elif path == '/produce':  # If the client is a producer
         # Wait for the game state to arrive completely
-        game_state = yield from ws.recv()
+        game_state = await ws.recv()
         # Broadcast the game state to all clients
         for sock in set(REGISTERED_WS_CLT):
             try:
-                yield from sock.send(game_state)
+                await sock.send(game_state)
             except ConnectionClosed:
                 # Remove the client if the connection was lost
                 unregister(sock)

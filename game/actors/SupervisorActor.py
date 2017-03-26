@@ -58,9 +58,9 @@ class SupervisorActor(ActorTypeDispatcher):
             # Check if the limit of playing game has been reached
             game_code = data.get('code')
             if game_code is not None:
-                if len(self._playing) > MAX_GAMES:
+                if len(self._playing) >= MAX_GAMES:
                     # Add the address of the sender (the GameActor) to the queue of waiting games
-                    self._waiting.add(game_code)
+                    self._waiting.append(game_code)
                 else:
                     # Add the player to the set of playing games
                     self._playing.add(game_code)
@@ -69,24 +69,18 @@ class SupervisorActor(ActorTypeDispatcher):
         elif action == "dead":
             # Upon death of a game, remove it from the playing set and launch the next game from the waiting queue
             game_code = data.get('game')
-            try:
+            if game_code in self._playing:
                 self._playing.remove(game_code)
-            except ValueError:
-                # The game was not playing no other actions are necessary
-                pass
 
             # Check if the game was connected to the ui
             if self._ui_connected == game_code:
                 self._ui_connected = None
 
             # Send a request to the lookup actor for the address of the next game
-            try:
+            if len(self._waiting) > 0:
                 next_game = self._waiting.popleft()
                 lookup = self.createActor('game.actors.LookupActor', globalName=LOOKUP_NAME)
                 self.send(lookup, format_msg('addr', data={'code': next_game}))
-            except IndexError:
-                # This means that no game is currently waiting
-                pass
 
         elif action == 'next':
             # Extract the required information from the data

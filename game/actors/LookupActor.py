@@ -19,13 +19,11 @@ setup()
 
 # Rest of the import statements
 from thespian.actors import *
-from random import choice
 from game.actors.CreateActor import CreateActor
 from game.actors.SupervisorActor import SupervisorActor
 from game.actors.PlayerLookupActor import PlayerLookupActor
 from game.actors.utils import extract_msg, format_msg
-from game.actors.Settings import SUPERVISOR_NAME, PLAYER_LOOKUP_NAME, LOGGING_NAME
-from game.actors.LoggingActor import LoggingActor
+from game.actors.Settings import SUPERVISOR_NAME, PLAYER_LOOKUP_NAME
 
 
 class LookupActor(ActorTypeDispatcher):
@@ -50,9 +48,6 @@ class LookupActor(ActorTypeDispatcher):
         # Create a child CreateActor actor
         self._child = None
 
-        # Initialize the logging actor
-        self._logger = None
-
     def receiveMsg_dict(self, message, sender):
         """
         Receive and act upon a message of type dictionary. Possible actions are:
@@ -72,7 +67,6 @@ class LookupActor(ActorTypeDispatcher):
         if action == 'init':
             self._child = self.createActor(CreateActor)
             self.send(self._child, format_msg('parent'))
-            self._logger = self.createActor(LoggingActor, globalName=LOGGING_NAME)
         elif action == 'dead':  # If a gameActor died
             # Simply remove it from the lookup table
             try:
@@ -80,6 +74,10 @@ class LookupActor(ActorTypeDispatcher):
                 for code in dict(self._table):
                     if self._table[code] == game_addr:
                         self._table.pop(code)
+                        # Check if the game was still incomplete
+                        if code in self._incomplete:
+                            # If so simply remove it
+                            self._incomplete.remove(code)
                         # Notify the supervisor of the game's death
                         supervisor = self.createActor(SupervisorActor, globalName=SUPERVISOR_NAME)
                         self.send(supervisor, format_msg('dead', data={'game': code}))
@@ -95,10 +93,6 @@ class LookupActor(ActorTypeDispatcher):
             try:
                 self._incomplete.remove(game_code)
             except KeyError:
-                self.send(self._logger, format_msg('exception', data="{} -- Could not remove game {} from"
-                                                                     " incomplete set {}".format(__name__,
-                                                                                                 game_code,
-                                                                                                 self._incomplete)))
                 pass
         elif action == 'player_addr':
             game_code = data.get('game_code', None)
@@ -129,7 +123,7 @@ class LookupActor(ActorTypeDispatcher):
                     self.send(self._child, format_msg('new', orig=sender))
                 else:
                     # Send back the address of an incomplete game
-                    game_addr = choice(incomplete_unsubscribed)
+                    game_addr = next(iter(incomplete_unsubscribed), None)
                     self.send(sender, game_addr)
         elif action == 'new':
             # Add the new game to the lookup tables and the set of incomplete games

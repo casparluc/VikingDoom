@@ -20,12 +20,12 @@ setup()
 
 # Rest of the import statements
 from thespian.actors import *
-from thespian.transient import transient_idle
 from game.actors.utils import extract_msg, format_msg
+from game.actors.Settings import LOGGING_NAME
+from game.actors.LoggingActor import LoggingActor
 from datetime import timedelta
 
 
-@transient_idle(exit_delay=timedelta(seconds=30))
 class PlayerActor(ActorTypeDispatcher):
     """
     Define an actor managing a player in the game. It receives its input from the django view and send the next move to
@@ -41,6 +41,8 @@ class PlayerActor(ActorTypeDispatcher):
 
         # Initialize the rest of the attributes
         self._parent = None
+        self._logger = None
+        self._alive = False
         self._player_state = None
 
     def receiveMsg_dict(self, message, sender):
@@ -56,6 +58,11 @@ class PlayerActor(ActorTypeDispatcher):
             # Store the ActorAddress of the sender as the parent
             self._parent = sender
             # Store the player object
+            # Routinely check that the player is still alive
+            self.wakeupAfter(timePeriod=timedelta(seconds=30))
+            self._logger = self.createActor(LoggingActor, globalName=LOGGING_NAME)
+
+            # Save the player's state
             self._player_state = data
         elif action == 'update':
             # Update the player object
@@ -63,10 +70,28 @@ class PlayerActor(ActorTypeDispatcher):
         elif action == 'next_action':
             # Check the state of the player
             if self._parent is None or self._player_state not in ['P', 'D']:
-                # If the game is finished or the player terminated we might as well tell him
                 if self._player_state in ['T', 'F']:
                     self.send(sender, None)
                 else:
                     self.send(sender, format_msg('error', data="The game has not begun yet."))
             else:
                 self.send(self._parent, format_msg('next_action', data=data, orig=sender))
+
+            # Make sure to notify the actor that the player is still alive
+            self._alive = True
+
+    def receiveMsg_WakeupMessage(self, message, sender):
+        """
+        A routine checking that the player is still alive. Called every 30 seconds.
+        :param message: An instance of the WakeupMessage class.
+        :param sender: The ActorAddress of the sending Actor.
+        :return: Nothing.
+        """
+
+        if self._alive:
+            # Switch back to dead until the next message
+            self._alive = False
+            self.wakeupAfter(timePeriod=timedelta(seconds=30))
+        else:
+            # The player did not get any message in the last 30 seconds better quit while you are ahead
+            self.send(self.myAddress, ActorExitRequest())
