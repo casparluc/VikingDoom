@@ -95,3 +95,18 @@ class PlayerActor(ActorTypeDispatcher):
         else:
             # The player did not get any message in the last 30 seconds better quit while you are ahead
             self.send(self.myAddress, ActorExitRequest())
+
+    def receiveMsg_PoisonMessage(self, message, sender):
+        """
+        Handle messages that made the destination actor crash.
+        :param message: An instance of the PoisonMessage class containing: poisonMessage, details.
+        :param sender: The ActorAddress of the ActorSystem. Ignore it.
+        :return: Nothing.
+        """
+
+        # The most likely occurrence of this happening is if the logging actor crashed, so update its address
+        self._logger = self.createActor(LoggingActor, globalName=LOGGING_NAME)
+        # And put it to work
+        self.send(self._logger, format_msg('error', data="{} - Received a poison message for"
+                                                         " request: {} ({}).".format(__name__, message.poisonMessage,
+                                                                                     message.details)))

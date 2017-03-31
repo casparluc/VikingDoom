@@ -75,7 +75,6 @@ class GameActor(ActorTypeDispatcher):
         if action == 'init':
             # Initialize the logging actor
             self._logger = self.createActor(LoggingActor, globalName=LOGGING_NAME)
-            self.send(self._logger, format_msg('debug', data="{} - Init".format(__name__)))
             # Extract the code of the game
             game_code = data.get('code')
             # Check if the object already exist in database
@@ -134,6 +133,7 @@ class GameActor(ActorTypeDispatcher):
         elif action == 'add_player':
             # Extract the user code
             user_code = data.get('code')
+
 
             # Check that we have less than four players and the player is not already part of the game
             if self._game.players.all().count() < 4 and self._game.players.all().filter(user__code__exact=user_code).count() < 1:
@@ -229,7 +229,6 @@ class GameActor(ActorTypeDispatcher):
                 self.send(sender, None)
 
         elif action == 'play':
-            self.send(self._logger, format_msg('debug', data="{} - Play".format(__name__)))
             # Ask to be woken up in a second
             self.wakeupAfter(timePeriod=timedelta(seconds=1))
             # Set the state of the players
@@ -327,7 +326,6 @@ class GameActor(ActorTypeDispatcher):
         if self._game.state == "P":
             # Increase the number of turns played
             self._game.turn += 1
-            self.send(self._logger, format_msg('debug', data="{} - Executing turn {} with {} players.".format(__name__, self._game.turn, len(self._players))))
 
             # Update players gold from mines
             for player in self._game.players.all().iterator():
@@ -413,7 +411,6 @@ class GameActor(ActorTypeDispatcher):
                     # Save the game object
                     self._game.save()
 
-                self.send(self._logger, format_msg('debug', data="{} - Player {} exited".format(__name__, player_code)))
                 break
 
         # Send game state to UIManager if available
@@ -429,6 +426,21 @@ class GameActor(ActorTypeDispatcher):
                 self._finish(terminate=True)
                 # Terminate the actor
                 self.send(self.myAddress, ActorExitRequest())
+
+    def receiveMsg_PoisonMessage(self, message, sender):
+        """
+        Handle messages that caused other actors to fail.
+        :param message: An instance of the PoisonMessage class, containing: poisonMessage, details.
+        :param sender: The ActorAddress of the ActorSystem. Ignore it.
+        :return: Nothing.
+        """
+
+        # Poison message will most likely occur for the LoggingActor, so simply update its address
+        self._logger = self.createActor(LoggingActor, globalName=LOGGING_NAME)
+        # And obviously put it to work directly
+        self.send(self._logger, format_msg('error', data="{} - Received a poison message for"
+                                                         " request: {} ({}).".format(__name__, message.poisonMessage,
+                                                                                     message.details)))
 
     def _get_board_from_file(self):
         """
@@ -1051,7 +1063,7 @@ class GameActor(ActorTypeDispatcher):
             # Take another shot at glory
             move = choice(list(available_moves.difference(tried_moves)))
             next_pos = pos_x + move[0], pos_y + move[1]
-            tried_moves.add(next_pos)
+            tried_moves.add(move)
             if next_pos in self._empty_tiles or next_pos == (pos_x, pos_y):
                 return next_pos
 

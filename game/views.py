@@ -115,6 +115,9 @@ class DungeonMasterView(APIView):
         :return: Json/Xml object containing the details of the Game the user was added to.
         """
 
+        # Get a logger
+        log = logging.getLogger("Game.Views")
+
         # Check that the user exist in the database
         if not User.objects.filter(code__exact=player_code).exists():
             return Response(data="User does not exist in the database.", status=status.HTTP_404_NOT_FOUND)
@@ -147,7 +150,19 @@ class DungeonMasterView(APIView):
                 sleep(2)
 
         # Extract all information from the response
-        game_state = data.get('game_state')
+        if isinstance(data, PoisonMessage):
+            log.exception("Game actor returned a poison message for the message: {},\nDetails:"
+                          " {}".format(data.poisonMessage, data.details))
+            # Return an exception to the user
+            return Response(data="Something went wrong with the game and you message could not be delivered.",
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            try:
+                game_state = data.get('game_state')
+            except AttributeError:
+                log.exception("Something bad happened with the data received from the game actor.")
+                return Response(data="Something went wrong with the game and you message could not be delivered.",
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Return the game data so far
         return Response(data=game_state, status=status.HTTP_201_CREATED)
@@ -161,11 +176,11 @@ class DungeonMasterView(APIView):
         :return: Json/xml object containing the details of the Game the user is playing.
         """
 
+        log = logging.getLogger("Game.Views")
         # Extract all required information
         try:
-            # TODO: Bring back the 'request.data' from django-request
-            player_action = request.POST['action']
-            player_code = request.POST['code']
+            player_action = request.data['action']
+            player_code = request.data['code']
         except MultiValueDictKeyError:
             return Response(data="An error occurred while trying to parse your request.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -180,6 +195,8 @@ class DungeonMasterView(APIView):
         cpt = 0
         player_addr = None
         while cpt < 3 and player_addr is None and not isinstance(player_addr, ActorAddress):
+            # Increase the retry number
+            cpt += 1
             with self._asys.private() as thrd_asys:
                 player_addr = thrd_asys.ask(lookup, format_msg('look', data={'game_code': game_code, 'user_code': player_code}), 3)  # Timeout of 3 seconds
             # Only sleep if we did not get the address
@@ -188,8 +205,9 @@ class DungeonMasterView(APIView):
 
         # If we still could not find the player's address
         if player_addr is None or not isinstance(player_addr, ActorAddress):
-            # An error occurred send back a 404
-            return Response(data="An error occurred while looking for your player.", status=status.HTTP_404_NOT_FOUND)
+            # Consider the player/game as terminated and send back a 503
+            return Response(data="An error occurred while looking for your player.",
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         # Ask the PlayerActor for the next action
         with self._asys.private() as thrd_asys:
@@ -208,6 +226,10 @@ class DungeonMasterView(APIView):
         if action == 'ok':
             # All went well
             return Response(data=data, status=status.HTTP_200_OK)
+
+        log.error("Nothing returned so far. Player addr: {}, Res: {}".format(player_addr, res))
+        # If all else fail return a 500
+        return Response(data=res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 #################################################################################
 ######################## FUNCTION BASED VIEWS ###################################

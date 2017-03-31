@@ -57,7 +57,7 @@ class LoggingActor(ActorTypeDispatcher):
         serializer = CustomGameSerializer(message)
 
         # Write the game state to its dedicated file
-        filename = os.path.join(Vikingdoom.settings.BASE_DIR, 'game/logs/game_states/game_{}.log'.format(message.code))
+        filename = os.path.join(Vikingdoom.settings.BASE_DIR, 'game', 'logs', 'game_states', 'game_{}.log'.format(message.code))
         with open(filename, "a") as f:
             ujson.dump(serializer.data, f)
             f.write("\n")

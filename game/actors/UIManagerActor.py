@@ -42,12 +42,11 @@ class UIManagerActor(ActorTypeDispatcher):
         # Serialize the game and all its components
         serializer = GameSerializer(message)
         # Render the serialized data in json format
-        rendered_data = ujson.dumps(serializer.data, ensure_ascii=False)
+        rendered_data = ujson.encode(serializer.data, ensure_ascii=False)
         # Send the game to all clients
         asyncio.get_event_loop().run_until_complete(self._send_data(rendered_data))
 
-    @asyncio.coroutine
-    def _send_data(self, game):
+    async def _send_data(self, game):
         """
         Define a websocket client for sending game state to the Web UI.
         :param game: A Json rendered string describing the game and all its components.
@@ -55,9 +54,5 @@ class UIManagerActor(ActorTypeDispatcher):
         """
 
         # Connect to the websocket server and send the game state
-        try:
-              ws = yield from websockets.connect(WS_URL)
-              yield from ws.send(game)
-              yield from ws.close()
-        except:
-            pass
+        async with websockets.connect(WS_URL) as ws:
+            await ws.send(game)
